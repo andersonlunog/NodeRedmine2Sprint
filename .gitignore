@@ -1,0 +1,4 @@
+/src/coffee/server/config/environment.coffee
+/src/compiled/server/config/environment.js
+/src/node_modules
+/mongoDB
