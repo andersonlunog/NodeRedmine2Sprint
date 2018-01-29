@@ -13,7 +13,8 @@ bodyParser = require('body-parser')
 session = require('express-session')
 environment = require('./server/config/environment')()
 # configuration ===============================================================
-mongoose.connect environment.dbHost, environment.dbName
+console.log environment
+mongoose.connect environment.database.host, environment.database.name
 # connect to our database
 require('./server/business/passport') passport
 # pass passport for configuration

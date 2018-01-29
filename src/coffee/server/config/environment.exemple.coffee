@@ -1,8 +1,9 @@
 module.exports = (pEnvironment) ->
   amb =
     development:
-      dbHost: "localhost"
-      dbName: "passportDB"
+      database:
+        host: "localhost"
+        name: "passportDB"
       mailSettings:
         send: false
         user: ""
