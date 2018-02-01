@@ -1,8 +1,9 @@
 # load the things we need
 mongoose = require('mongoose')
 bcrypt = require('bcrypt-nodejs')
+Schema = mongoose.Schema
 # define the schema for our user model
-userSchema = mongoose.Schema(
+userSchema = new Schema
   local:
     email: String
     password: String
@@ -15,7 +16,7 @@ userSchema = mongoose.Schema(
     id: String
     token: String
     email: String
-    name: String)
+    name: String
 # generating a hash
 
 userSchema.methods.generateHash = (password) ->

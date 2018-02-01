@@ -29,7 +29,7 @@
   // configuration ===============================================================
   console.log(environment);
 
-  mongoose.connect(environment.database.host, environment.database.name);
+  mongoose.connect(environment.database.uri);
 
   // connect to our database
   require('./server/business/passport')(passport);
