@@ -122,8 +122,8 @@
     app.get('/unlink/local', isLoggedIn, function(req, res) {
       var user;
       user = req.user;
-      user.local.email = void 0;
-      user.local.password = void 0;
+      user.email = void 0;
+      user.password = void 0;
       user.save(function(err) {
         res.redirect('/profile');
       });

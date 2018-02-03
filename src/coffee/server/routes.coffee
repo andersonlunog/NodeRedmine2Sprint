@@ -106,8 +106,8 @@ module.exports = (app, passport) ->
   # local -----------------------------------
   app.get '/unlink/local', isLoggedIn, (req, res) ->
     user = req.user
-    user.local.email = undefined
-    user.local.password = undefined
+    user.email = undefined
+    user.password = undefined
     user.save (err) ->
       res.redirect '/profile'
       return

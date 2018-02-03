@@ -49,7 +49,7 @@
       // asynchronous
       process.nextTick(function() {
         User.findOne({
-          'local.email': email
+          'email': email
         }, function(err, user) {
           // if there are any errors, return the error
           if (err) {
@@ -68,7 +68,7 @@
     }));
     // =========================================================================
     // LOCAL SIGNUP ============================================================
-    // =========================================================================
+    // ========================================================================= 
     passport.use('local-signup', new LocalStrategy({
       usernameField: 'email',
       passwordField: 'password',
@@ -82,7 +82,7 @@
       process.nextTick(function() {
         if (!req.user) {
           User.findOne({
-            'local.email': email
+            'email': email
           }, function(err, user) {
             var newUser;
             // if there are any errors, return the error
@@ -91,12 +91,12 @@
             }
             // check to see if theres already a user with that email
             if (user) {
-              return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
+              return done(null, false, req.flash('signupMessage', 'E-mail já cadastrado.'));
             } else {
               // create the user
               newUser = new User;
-              newUser.local.email = email;
-              newUser.local.password = newUser.generateHash(password);
+              newUser.email = email;
+              newUser.password = newUser.generateHash(password);
               newUser.save(function(err) {
                 if (err) {
                   return done(err);
@@ -105,23 +105,23 @@
               });
             }
           });
-        } else if (!req.user.local.email) {
+        } else if (!req.user.email) {
           // ...presumably they're trying to connect a local account
           // BUT let's check if the email used to connect a local account is being used by another user
           User.findOne({
-            'local.email': email
+            'email': email
           }, function(err, user) {
             var user;
             if (err) {
               return done(err);
             }
             if (user) {
-              return done(null, false, req.flash('loginMessage', 'That email is already taken.'));
+              return done(null, false, req.flash('loginMessage', 'E-mail já cadastrado.'));
             } else {
               // Using 'loginMessage instead of signupMessage because it's used by /connect/local'
               user = req.user;
-              user.local.email = email;
-              user.local.password = user.generateHash(password);
+              user.email = email;
+              user.password = user.generateHash(password);
               user.save(function(err) {
                 if (err) {
                   return done(err);
@@ -143,7 +143,7 @@
     fbStrategy.passReqToCallback = true;
     // allows us to pass in the req from our route (lets us check if a user is logged in or not)
     passport.use(new FacebookStrategy(fbStrategy, function(req, token, refreshToken, profile, done) {
-      console.log(JSON.stringify(profile));
+      // console.log JS/ON.stringify(profile)
       // asynchronous
       process.nextTick(function() {
         var user;
@@ -151,15 +151,14 @@
           User.findOne({
             'facebook.id': profile.id
           }, function(err, user) {
-            var newUser;
             if (err) {
               return done(err);
             }
             if (user) {
               if (!user.facebook.token) {
                 user.facebook.token = token;
-                user.facebook.name = profile.name.givenName + ' ' + profile.name.familyName;
-                user.facebook.email = (profile.emails[0].value || '').toLowerCase();
+                user.name = profile.name.givenName + ' ' + profile.name.familyName;
+                user.email = (profile.emails[0].value || '').toLowerCase();
                 user.save(function(err) {
                   if (err) {
                     return done(err);
@@ -169,18 +168,44 @@
               }
               return done(null, user);
             } else {
-              // if there is no user, create them
               // user found, return that user
-              newUser = new User;
-              newUser.facebook.id = profile.id;
-              newUser.facebook.token = token;
-              newUser.facebook.name = profile.name.givenName + ' ' + profile.name.familyName;
-              newUser.facebook.email = (profile.emails[0].value || '').toLowerCase();
-              newUser.save(function(err) {
+              User.findOne({
+                'email': profile.emails[0].value
+              }, function(err, user) {
+                var newUser;
+                // if there are any errors, return the error
                 if (err) {
                   return done(err);
                 }
-                return done(null, newUser);
+                // check to see if theres already a user with that email
+                if (user) {
+                  user.facebook.id = profile.id;
+                  user.facebook.token = token;
+                  if (!user.name) {
+                    user.name = profile.name.givenName + ' ' + profile.name.familyName;
+                  }
+                  user.email = profile.emails[0].value;
+                  user.save(function(err) {
+                    if (err) {
+                      return done(err);
+                    }
+                    return done(null, user);
+                  });
+                  return done(null, user);
+                } else {
+                  // if there is no user, create them
+                  newUser = new User;
+                  newUser.facebook.id = profile.id;
+                  newUser.facebook.token = token;
+                  newUser.name = profile.name.givenName + ' ' + profile.name.familyName;
+                  newUser.email = (profile.emails[0].value || '').toLowerCase();
+                  newUser.save(function(err) {
+                    if (err) {
+                      return done(err);
+                    }
+                    return done(null, newUser);
+                  });
+                }
               });
             }
           });
@@ -190,7 +215,9 @@
           // pull the user out of the session
           user.facebook.id = profile.id;
           user.facebook.token = token;
-          user.facebook.name = profile.name.givenName + ' ' + profile.name.familyName;
+          if (!user.name) {
+            user.name = profile.name.givenName + ' ' + profile.name.familyName;
+          }
           user.facebook.email = (profile.emails[0].value || '').toLowerCase();
           user.save(function(err) {
             if (err) {

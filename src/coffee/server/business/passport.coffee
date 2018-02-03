@@ -38,7 +38,7 @@ module.exports = (passport) ->
     # Use lower-case e-mails to avoid case-sensitive e-mail matching
     # asynchronous
     process.nextTick ->
-      User.findOne { 'local.email': email }, (err, user) ->
+      User.findOne { 'email': email }, (err, user) ->
         # if there are any errors, return the error
         if err
           return done(err)
@@ -54,7 +54,7 @@ module.exports = (passport) ->
 )
   # =========================================================================
   # LOCAL SIGNUP ============================================================
-  # =========================================================================
+  # ========================================================================= 
   passport.use 'local-signup', new LocalStrategy({
     usernameField: 'email'
     passwordField: 'password'
@@ -67,38 +67,38 @@ module.exports = (passport) ->
     process.nextTick ->
       # if the user is not already logged in:
       if !req.user
-        User.findOne { 'local.email': email }, (err, user) ->
+        User.findOne { 'email': email }, (err, user) ->
           # if there are any errors, return the error
           if err
             return done(err)
           # check to see if theres already a user with that email
           if user
-            return done(null, false, req.flash('signupMessage', 'That email is already taken.'))
+            return done(null, false, req.flash('signupMessage', 'E-mail já cadastrado.'))
           else
             # create the user
             newUser = new User
-            newUser.local.email = email
-            newUser.local.password = newUser.generateHash(password)
+            newUser.email = email
+            newUser.password = newUser.generateHash(password)
             newUser.save (err) ->
               if err
                 return done(err)
               done null, newUser
           return
         # if the user is logged in but has no local account...
-      else if !req.user.local.email
+      else if !req.user.email
         # ...presumably they're trying to connect a local account
         # BUT let's check if the email used to connect a local account is being used by another user
-        User.findOne { 'local.email': email }, (err, user) ->
+        User.findOne { 'email': email }, (err, user) ->
           `var user`
           if err
             return done(err)
           if user
-            return done(null, false, req.flash('loginMessage', 'That email is already taken.'))
+            return done(null, false, req.flash('loginMessage', 'E-mail já cadastrado.'))
             # Using 'loginMessage instead of signupMessage because it's used by /connect/local'
           else
             user = req.user
-            user.local.email = email
-            user.local.password = user.generateHash(password)
+            user.email = email
+            user.password = user.generateHash(password)
             user.save (err) ->
               if err
                 return done(err)
@@ -117,7 +117,7 @@ module.exports = (passport) ->
   fbStrategy.passReqToCallback = true
   # allows us to pass in the req from our route (lets us check if a user is logged in or not)
   passport.use new FacebookStrategy(fbStrategy, (req, token, refreshToken, profile, done) ->
-    console.log JSON.stringify(profile)
+    # console.log JS/ON.stringify(profile)
     # asynchronous
     process.nextTick ->
       # check if the user is already logged in
@@ -129,8 +129,8 @@ module.exports = (passport) ->
             # if there is a user id already but no token (user was linked at one point and then removed)
             if !user.facebook.token
               user.facebook.token = token
-              user.facebook.name = profile.name.givenName + ' ' + profile.name.familyName
-              user.facebook.email = (profile.emails[0].value or '').toLowerCase()
+              user.name = profile.name.givenName + ' ' + profile.name.familyName
+              user.email = (profile.emails[0].value or '').toLowerCase()
               user.save (err) ->
                 if err
                   return done(err)
@@ -138,24 +138,43 @@ module.exports = (passport) ->
             return done(null, user)
             # user found, return that user
           else
-            # if there is no user, create them
-            newUser = new User
-            newUser.facebook.id = profile.id
-            newUser.facebook.token = token
-            newUser.facebook.name = profile.name.givenName + ' ' + profile.name.familyName
-            newUser.facebook.email = (profile.emails[0].value or '').toLowerCase()
-            newUser.save (err) ->
+            User.findOne { 'email': profile.emails[0].value }, (err, user) ->
+              # if there are any errors, return the error
               if err
                 return done(err)
-              done null, newUser
+              # check to see if theres already a user with that email
+              if user
+                user.facebook.id = profile.id
+                user.facebook.token = token
+                if !user.name
+                  user.name = profile.name.givenName + ' ' + profile.name.familyName
+                user.email = profile.emails[0].value
+                user.save (err) ->
+                  if err
+                    return done(err)
+                  done null, user
+                return done(null, user)
+              else
+                # if there is no user, create them
+                newUser = new User
+                newUser.facebook.id = profile.id
+                newUser.facebook.token = token
+                newUser.name = profile.name.givenName + ' ' + profile.name.familyName
+                newUser.email = (profile.emails[0].value or '').toLowerCase()
+                newUser.save (err) ->
+                  if err
+                    return done(err)
+                  done null, newUser
+              return
           return
       else
         # user already exists and is logged in, we have to link accounts
         user = req.user
         # pull the user out of the session
         user.facebook.id = profile.id
-        user.facebook.token = token
-        user.facebook.name = profile.name.givenName + ' ' + profile.name.familyName
+        user.facebook.token = token        
+        if !user.name
+          user.name = profile.name.givenName + ' ' + profile.name.familyName
         user.facebook.email = (profile.emails[0].value or '').toLowerCase()
         user.save (err) ->
           if err
