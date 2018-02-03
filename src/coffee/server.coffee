@@ -13,7 +13,6 @@ bodyParser = require('body-parser')
 session = require('express-session')
 environment = require('./server/config/environment')()
 # configuration ===============================================================
-console.log environment
 mongoose.connect environment.database.uri
 # connect to our database
 require('./server/business/passport') passport
