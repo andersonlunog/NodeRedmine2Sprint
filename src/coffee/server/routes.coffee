@@ -131,10 +131,19 @@ module.exports = (app, passport) ->
 
   # request para redmine ---------------------------------
   app.get '/redmine', (req, res) ->
-    redmine.getIssue (data, status) ->
-      res.redirect "/"
+    res.render 'redmine.ejs', message: req.flash('redmineMessage')
+
+  app.get '/redmine/issues', (req, res) ->
+    issuesList = req.query.issues
+
+    return res.render 'redmine.ejs', {issues: [], issuesList: issuesList} if not issuesList
+
+    issuesArr = issuesList.split /[^\d]/
+
+    redmine.getIssue issuesList, (data, status) ->
+      res.render 'redmine.ejs', {issues: [data.issue], issuesList: issuesList}
     , (err) ->
-      res.redirect "/"
+      res.render 'redmine.ejs', message: err
       
   return
 

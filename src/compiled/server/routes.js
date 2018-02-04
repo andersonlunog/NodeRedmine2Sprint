@@ -148,10 +148,29 @@
     });
     // request para redmine ---------------------------------
     app.get('/redmine', function(req, res) {
-      return redmine.getIssue(function(data, status) {
-        return res.redirect("/");
+      return res.render('redmine.ejs', {
+        message: req.flash('redmineMessage')
+      });
+    });
+    app.get('/redmine/issues', function(req, res) {
+      var issuesArr, issuesList;
+      issuesList = req.query.issues;
+      if (!issuesList) {
+        return res.render('redmine.ejs', {
+          issues: [],
+          issuesList: issuesList
+        });
+      }
+      issuesArr = issuesList.split(/[^\d]/);
+      return redmine.getIssue(issuesList, function(data, status) {
+        return res.render('redmine.ejs', {
+          issues: [data.issue],
+          issuesList: issuesList
+        });
       }, function(err) {
-        return res.redirect("/");
+        return res.render('redmine.ejs', {
+          message: err
+        });
       });
     });
   };

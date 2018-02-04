@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+  <title>Node Authentication</title>
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+  <style>
+  body         { padding-top:80px; word-wrap:break-word; }
+</style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1><span class="fa fa-anchor"></span> Redmine</h1>
+    </div>
+    
+    <div class="row">
+      <form action="/redmine/issues" method="get">
+        <div class="form-group">
+          <label for="issues">Issues</label>
+          <input name="issues" type="text" class="form-control" id="issues" placeholder="Issues" value="<%= issuesList %>">
+        </div>
+        <button type="submit" class="btn btn-default">Buscar</button>
+      </form>
+    </div>
+
+    <div class="row">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Título</th>
+            <th>Status</th>
+            <th>Atribuído</th>
+            <th>Estimado</th>
+            <th>Gasto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% issues.forEach(function(issue){ %>
+          <tr> <!-- <%= issue.priority.id%>: <%= issue.priority.name%> -->
+            <td>
+              <a href="https://siacon.redmineup.com/issues/<%= issue.id%>" target="_blank">#<%= issue.id %></a>
+            </td>
+            <td><%= issue.subject %></td>
+            <td><%= issue.status.name %></td>
+            <td><%= issue.assigned_to.name %></td>
+            <td><%= issue.estimated_hours %></td>
+            <td><%= issue.spent_hours %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

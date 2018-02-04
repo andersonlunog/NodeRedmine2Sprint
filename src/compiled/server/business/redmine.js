@@ -12,14 +12,14 @@
   // use this one for testing
   module.exports = function() {
     return {
-      getIssue: function(callback, error) {
+      getIssue: function(issue, callback, error) {
         var auth, redmineReq;
         console.log("Fazendo a requisição...");
         auth = 'Basic ' + new Buffer(environment.redmine.user + ':' + environment.redmine.pass).toString('base64');
         redmineReq = https.request({
           host: environment.redmine.host,
           port: 443,
-          path: '/issues/12218.json',
+          path: `/issues/${issue}.json`,
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
