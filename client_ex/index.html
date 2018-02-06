@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-framework="backbonejs">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="favicon.ico"> -->
+    
+    <title>Test Case Creator</title>
+
+    <link rel='stylesheet' href='libs/bootstrap/css/bootstrap.min.css'>
+    <link rel='stylesheet' href='libs/bootstrap/css/bootstrap-theme.min.css'>
+    <link rel="stylesheet" href="libs/selectize/css/selectize.bootstrap3.css">
+
+    <style type="text/css">
+      .btn-acoes-area {
+        display: none;
+      }
+
+      .table-interna {
+        background-color: transparent !important;
+      }
+
+      .table-json {
+        margin: 0;
+      }
+    </style>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="">Test Case Creator</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav tipos-menu">
+            <li class="chamados"><a href="#chamados">Chamados</a></li>
+            <li class="parametros-calculo"><a href="#parametros-calculo">Parâmetros de Cálculo</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Ações <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a class="btn-add-new" href="#"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Adicionar</a></li>
+                <li><a class="btn-import" href="#"><span class="glyphicon glyphicon-import" aria-hidden="true"></span> Importar</a></li>
+                <li><a class="btn-export" href="#"><span class="glyphicon glyphicon-export" aria-hidden="true"></span> Exportar</a></li>
+                <li><a class="btn-nfe-infos" href="#"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span> NFe's</a></li>
+                <li><a class="btn-classificacoes-infos" href="#"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span> Índices de Classificação</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <input class="input-file" type="file" style="display: none" />
+    </nav>
+
+    <div id="container" class="test-case-container" style="margin-top: 70px">
+      <table class="table table-bordered table-json table-striped table-json-root">
+        <thead>
+          <tr></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div> <!-- /container -->
+
+    <div id="modal-info" class="modal fade" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Informações</h4>
+          </div>
+          <div class="modal-body">
+            <input style="display: none" type="file" id="nfe_files" name="files[]" multiple />
+            <div id='infos' class='medium-12 columns'></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Fechar</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div>
+
+
+    <script src="libs/jquery.min.js"></script>
+    <script src="libs/underscore-min.js"></script>
+    <script src="libs/jsoneditor.min.js"></script>
+    <script src="libs/backbone-min.js"></script>
+    <script src="libs/bootstrap/js/bootstrap.min.js"></script>    
+    <!-- <script src="libs/select2/dist/js/select2.min.js"></script> -->
+    <script src="libs/selectize/js/standalone/selectize.min.js"></script>
+    <script src="libs/backbone.localStorage.js"></script>
+
+    <!-- <script src="js/models/test-case-model.js"></script> -->
+    <script src="js/models/chamado-model.js"></script>
+    <!-- <script src="js/collections/test-case-collection.js"></script> -->
+    <script src="js/collections/chamado-collection.js"></script>
+    <!-- <script src="js/views/test-case-view.js"></script>
+    <script src="js/views/test-case-editor-view.js"></script> -->
+    <script src="js/views/chamado-view.js"></script>
+    <script src="js/views/app-view.js"></script>
+    <script src="js/routers/router.js"></script>
+    <script src="js/app.js"></script>
+    <!-- <script src="js/views/schemas/parametros-calculo.js"></script> -->
+    <!-- <script src="js/utils/calculo-util.js"></script> -->
+  </body>
+</html>
