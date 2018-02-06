@@ -2,3 +2,4 @@
 /src/compiled/server/config/environment.js
 /src/node_modules
 /mongoDB
+/src/compiled/public/libs

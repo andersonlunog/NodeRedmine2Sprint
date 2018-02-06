@@ -1,0 +1,25 @@
+<div class="row-fluid">
+	<table class="table table-hover">
+		<thead>
+			<tr>
+				<th>Nome</th>
+				<th>Email</th>
+				<th>Ações</th>
+			</tr>
+		</thead>
+		<tbody>
+			<%_.each(usuarios, function(usuario) {%>
+			<tr>
+				<td><%= usuario.attributes.nome %></td>
+				<td><%= usuario.attributes.email %></td>
+				<td>
+					<a class="btn btn-mini btn-primary" href="#/usuario/<%= usuario.id %>">Editar</a>
+					<a class="btn btn-mini btn-danger btn-delete" data-id="<%= usuario.id %>">Del</a>
+				</td>
+			</tr>
+			<%})%>
+		</tbody>		
+	</table>
+	<a class="btn btn-primary" id="btn-salvar">Salvar</a>					
+	<a class="btn" href="#/usuario">Novo</a>
+</div>
