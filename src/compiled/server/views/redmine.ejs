@@ -24,7 +24,7 @@
         <button type="submit" class="btn btn-default">Buscar</button>
       </form>
     </div>
-
+    <hr>
     <div class="row">
       <table class="table table-hover">
         <thead>
@@ -38,14 +38,18 @@
           </tr>
         </thead>
         <tbody>
-          <% issues.forEach(function(issue){ %>
-          <tr> <!-- <%= issue.priority.id%>: <%= issue.priority.name%> -->
+          <% issues.forEach(function(obj){ 
+            var issue = obj.issue;
+            if (!issue)
+              return;
+          %>
+          <tr>
             <td>
               <a href="https://siacon.redmineup.com/issues/<%= issue.id%>" target="_blank">#<%= issue.id %></a>
             </td>
             <td><%= issue.subject %></td>
-            <td><%= issue.status.name %></td>
-            <td><%= issue.assigned_to.name %></td>
+            <td><%= issue.status ? issue.status.name : "" %></td>
+            <td><%= issue.assigned_to ? issue.assigned_to.name : "" %></td>
             <td><%= issue.estimated_hours %></td>
             <td><%= issue.spent_hours %></td>
           </tr>
@@ -53,6 +57,8 @@
         </tbody>
       </table>
     </div>
+    <hr>
+    <%= issues.length %> issues encontrados
   </div>
 </body>
 </html>

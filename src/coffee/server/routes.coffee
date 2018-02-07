@@ -130,8 +130,9 @@ module.exports = (app, passport) ->
     return
 
   # request para redmine ---------------------------------
-  app.get '/redmine', (req, res) ->
-    res.render 'redmine.ejs', message: req.flash('redmineMessage')
+  app.get '/redmine/issue', (req, res) ->
+    redmine.getIssue(req.query.issue).then (issue) ->
+      req.response issue
 
   app.get '/redmine/issues', (req, res) ->
     issuesList = req.query.issues
@@ -140,10 +141,20 @@ module.exports = (app, passport) ->
 
     issuesArr = issuesList.split /[^\d]/
 
-    redmine.getIssue issuesList, (data, status) ->
-      res.render 'redmine.ejs', {issues: [data.issue], issuesList: issuesList}
-    , (err) ->
-      res.render 'redmine.ejs', message: err
+    promises = []
+
+    issuesArr.forEach (issueID, i, arr)->
+      return if not issueID
+      promises.push redmine.getIssue issueID
+
+    Promise.all(promises).then (issues) ->
+      console.log "Resolveu as promessas.."
+      res.render 'redmine.ejs', {issues: issues, issuesList: issuesList}
+
+    # redmine.getIssue issuesList, (data, status) ->
+    #   res.render 'redmine.ejs', {issues: [data.issue], issuesList: issuesList}
+    # , (err) ->
+    #   res.render 'redmine.ejs', message: err
       
   return
 
