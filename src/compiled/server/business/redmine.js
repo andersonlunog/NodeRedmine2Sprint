@@ -14,10 +14,10 @@
     return {
       getIssue: function(issue) {
         return new Promise((resolve, reject) => {
-          var auth, redmineReq;
+          var auth, req;
           console.log(`Fazendo a requisição da issue ${issue}...`);
           auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
-          redmineReq = https.request({
+          req = https.request({
             host: environment.redmine.host,
             port: 443,
             path: `/issues/${issue}.json`,
@@ -27,16 +27,16 @@
               "Authorization": auth
             }
           // agent: false  # create a new agent just for this one request
-          }, (redmineRes) => {
-            redmineRes.setEncoding("utf8");
-            if (redmineRes.statusCode !== 200) {
-              console.log(`statusCode para issue ${issue}:`, redmineRes.statusCode);
-              // callback? null, redmineRes.statusCode
+          }, (res) => {
+            res.setEncoding("utf8");
+            if (res.statusCode !== 200) {
+              console.log(`statusCode para issue ${issue}:`, res.statusCode);
+              // callback? null, res.statusCode
               reject({
-                statusCode: redmineRes.statusCode
+                statusCode: res.statusCode
               });
             }
-            redmineRes.on("data", (d) => {
+            res.on("data", (d) => {
               var obj;
               obj = JSON.parse(d);
               console.log(`Buscou ${obj.issue.id}`);
@@ -48,24 +48,24 @@
               });
             });
             // process.stdout.write(obj);
-            return redmineRes.on("end", () => {
+            return res.on("end", () => {
               return console.log("Acabou");
             });
           });
-          redmineReq.on("error", (e) => {
+          req.on("error", (e) => {
             console.error(e);
             // error? e
             return resolve(e);
           });
-          return redmineReq.end();
+          return req.end();
         });
       },
       getTimeEntries: function(issue) {
         return new Promise(function(resolve, reject) {
-          var auth, redmineReq;
+          var auth, req;
           console.log(`Fazendo a requisição de tempo da issue ${issue}...`);
           auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
-          redmineReq = https.request({
+          req = https.request({
             host: environment.redmine.host,
             port: 443,
             path: `/time_entries.json?issue_id=${issue}`,
@@ -75,37 +75,42 @@
               "Authorization": auth
             }
           // agent: false  # create a new agent just for this one request
-          }, function(redmineRes) {
-            redmineRes.setEncoding("utf8");
-            if (redmineRes.statusCode !== 200) {
-              // console.log "statusCode para issue #{issue}:", redmineRes.statusCode
-              // callback? null, redmineRes.statusCode
+          }, function(res) {
+            var buffer;
+            res.setEncoding("utf8");
+            if (res.statusCode !== 200) {
+              // console.log "statusCode para issue #{issue}:", res.statusCode
+              // callback? null, res.statusCode
               reject({
-                statusCode: redmineRes.statusCode
+                statusCode: res.statusCode
               });
             }
-            redmineRes.on("data", (d) => {
+            buffer = "";
+            res.on("data", (data) => {
+              return buffer += data;
+            });
+            return res.on("end", () => {
               var e, obj;
-              try {
-                obj = JSON.parse(d);
-                return resolve(obj);
-              } catch (error) {
-                e = error;
-                return resolve({
-                  time_entries: {}
-                });
+              if (buffer) {
+                try {
+                  obj = JSON.parse(buffer);
+                  return resolve(obj);
+                } catch (error) {
+                  e = error;
+                  return resolve({
+                    time_entries: {}
+                  });
+                }
               }
             });
-            return redmineRes.on("end", () => {
-              return console.log("Acabou");
-            });
           });
-          redmineReq.on("error", (e) => {
+          // console.log "Chamou end..."
+          req.on("error", (e) => {
             console.error(e);
             // error? e
-            return resolve(e);
+            return reject(e);
           });
-          return redmineReq.end();
+          return req.end();
         });
       }
     };

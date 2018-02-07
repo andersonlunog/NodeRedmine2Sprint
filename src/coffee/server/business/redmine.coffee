@@ -11,7 +11,7 @@ module.exports = () ->
     new Promise (resolve, reject) =>
         console.log "Fazendo a requisição da issue #{issue}..."
         auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
-        redmineReq = https.request
+        req = https.request
           host: environment.redmine.host
           port: 443
           path: "/issues/#{issue}.json"
@@ -21,14 +21,14 @@ module.exports = () ->
             "Authorization": auth
 
           # agent: false  # create a new agent just for this one request
-        , (redmineRes) =>
-          redmineRes.setEncoding "utf8"
-          if redmineRes.statusCode != 200
-            console.log "statusCode para issue #{issue}:", redmineRes.statusCode
-            # callback? null, redmineRes.statusCode
-            reject statusCode: redmineRes.statusCode
+        , (res) =>
+          res.setEncoding "utf8"
+          if res.statusCode != 200
+            console.log "statusCode para issue #{issue}:", res.statusCode
+            # callback? null, res.statusCode
+            reject statusCode: res.statusCode
 
-          redmineRes.on "data", (d) =>        
+          res.on "data", (d) =>        
             obj = JSON.parse d
             console.log "Buscou #{obj.issue.id}"
             # console.log JSON.stringify obj, null, 2
@@ -38,22 +38,22 @@ module.exports = () ->
               resolve obj
             # process.stdout.write(obj);
 
-          redmineRes.on "end", =>
+          res.on "end", =>
             console.log "Acabou"
 
 
-        redmineReq.on "error", (e) =>
+        req.on "error", (e) =>
           console.error e
           # error? e
           resolve e
 
-        redmineReq.end()
+        req.end()
 
   getTimeEntries: (issue) ->
     new Promise (resolve, reject) ->
         console.log "Fazendo a requisição de tempo da issue #{issue}..."
         auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
-        redmineReq = https.request
+        req = https.request
           host: environment.redmine.host
           port: 443
           path: "/time_entries.json?issue_id=#{issue}"
@@ -63,27 +63,31 @@ module.exports = () ->
             "Authorization": auth
 
           # agent: false  # create a new agent just for this one request
-        , (redmineRes) ->
-          redmineRes.setEncoding "utf8"
-          if redmineRes.statusCode != 200
-            # console.log "statusCode para issue #{issue}:", redmineRes.statusCode
-            # callback? null, redmineRes.statusCode
-            reject statusCode: redmineRes.statusCode
+        , (res) ->
+          res.setEncoding "utf8"
+          if res.statusCode != 200
+            # console.log "statusCode para issue #{issue}:", res.statusCode
+            # callback? null, res.statusCode
+            reject statusCode: res.statusCode
 
-          redmineRes.on "data", (d) =>        
-            try
-              obj = JSON.parse d
-              resolve obj
-            catch e
-              resolve time_entries: {}
+          buffer = ""
 
-          redmineRes.on "end", =>
-            console.log "Acabou"
+          res.on "data", (data) => 
+            buffer += data
+
+          res.on "end", =>
+            if buffer
+              try
+                obj = JSON.parse buffer
+                resolve obj
+              catch e
+                resolve time_entries: {}
+            # console.log "Chamou end..."
 
 
-        redmineReq.on "error", (e) =>
+        req.on "error", (e) =>
           console.error e
           # error? e
-          resolve e
+          reject e
 
-        redmineReq.end()
+        req.end()

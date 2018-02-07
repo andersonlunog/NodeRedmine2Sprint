@@ -137,6 +137,7 @@
         res.redirect('/profile');
       });
     });
+    
     // google ---------------------------------
     app.get('/unlink/google', isLoggedIn, function(req, res) {
       var user;

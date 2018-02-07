@@ -51,8 +51,8 @@
             <td><%= issue.subject %></td>
             <td><%= issue.status ? issue.status.name : "" %></td>
             <td><%= issue.assigned_to ? issue.assigned_to.name : "" %></td>
-            <td><%= issue.estimated_hours %></td>
-            <td><%= issue.spent_hours %></td>
+            <td><%= issue.estimated_hours ? issue.estimated_hours.toLocaleString().replace(".", ",") : "" %></td>
+            <td><%= issue.spent_hours ? issue.spent_hours.toLocaleString().replace(".", ",") : "" %></td>
             <td><% if (obj.time_entries && obj.time_entries.length) { 
                 obj.time_entries.forEach(function(time){ %>
                 <%= time.user.name %> [<%= time.hours %>]<br>

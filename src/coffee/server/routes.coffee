@@ -119,7 +119,7 @@ module.exports = (app, passport) ->
     user.save (err) ->
       res.redirect '/profile'
       return
-    return
+    return    
   # google ---------------------------------
   app.get '/unlink/google', isLoggedIn, (req, res) ->
     user = req.user
