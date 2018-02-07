@@ -35,6 +35,7 @@
             <th>Atribuído</th>
             <th>Estimado</th>
             <th>Gasto</th>
+            <th>Lançamentos Horas</th>            
           </tr>
         </thead>
         <tbody>
@@ -52,6 +53,11 @@
             <td><%= issue.assigned_to ? issue.assigned_to.name : "" %></td>
             <td><%= issue.estimated_hours %></td>
             <td><%= issue.spent_hours %></td>
+            <td><% if (obj.time_entries && obj.time_entries.length) { 
+                obj.time_entries.forEach(function(time){ %>
+                <%= time.user.name %> [<%= time.hours %>]<br>
+              <%  }); } %>
+            </td>
           </tr>
           <% }); %>
         </tbody>
