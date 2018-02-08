@@ -4,6 +4,13 @@
   <title>Node Authentication</title>
   <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+  <script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.13/jquery.mask.min.js"></script>
+  <script>
+    $(function() {
+      $('.placeholder').mask("00/00/0000", {placeholder: "__/__/____"});
+    });
+  </script>
   <style>
   body         { padding-top:80px; word-wrap:break-word; }
 </style>
@@ -19,7 +26,21 @@
       <form action="/redmine/issues" method="get">
         <div class="form-group">
           <label for="issues">Issues</label>
-          <input name="issues" type="text" class="form-control" id="issues" placeholder="Issues" value="<%= issuesList %>">
+          <textarea class="form-control" name="issues" id="issues"><%= issuesList %></textarea>
+        </div>
+        <div class="row">
+            <div class='col-md-6'>
+                <div class="form-group">
+                    <label class="control-label" for="data-inicial">Data inicial</label>
+                    <input type="text" class="form-control placeholder" name="inicial" id="data-inicial" placeholder="dd/mm/aaaa" value="<%= inicial %>">
+                </div>
+            </div>
+            <div class='col-md-6'>
+                <div class="form-group">
+                    <label class="control-label" for="data-final">Data final</label>
+                    <input type="text" class="form-control placeholder" name="final" id="data-final" placeholder="dd/mm/aaaa" value="<%= final %>">
+                </div>
+            </div>
         </div>
         <button type="submit" class="btn btn-default">Buscar</button>
       </form>
@@ -53,9 +74,9 @@
             <td><%= issue.assigned_to ? issue.assigned_to.name : "" %></td>
             <td><%= issue.estimated_hours ? issue.estimated_hours.toLocaleString().replace(".", ",") : "" %></td>
             <td><%= issue.spent_hours ? issue.spent_hours.toLocaleString().replace(".", ",") : "" %></td>
-            <td><% if (obj.time_entries && obj.time_entries.length) { 
+            <td><% if (obj.time_entries && obj.time_entries.length) {
                 obj.time_entries.forEach(function(time){ %>
-                <%= time.user.name %> [<%= time.hours %>]<br>
+                <%= time.user.name %> [<%= time.hours %>][<%= time.spent_on %>]<br>
               <%  }); } %>
             </td>
           </tr>

@@ -7,7 +7,8 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 module.exports = () ->
 
-  getIssue: (issue) ->
+  getIssue: (issue, dtInicial, dtFinal) ->
+
     new Promise (resolve, reject) =>
         console.log "Fazendo a requisição da issue #{issue}..."
         auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
@@ -33,7 +34,7 @@ module.exports = () ->
             console.log "Buscou #{obj.issue.id}"
             # console.log JSON.stringify obj, null, 2
             # callback? obj, 200
-            @getTimeEntries(issue).then (times) ->
+            @getTimeEntries(issue, dtInicial, dtFinal).then (times) ->
               obj.time_entries = times.time_entries
               resolve obj
             # process.stdout.write(obj);
@@ -49,14 +50,26 @@ module.exports = () ->
 
         req.end()
 
-  getTimeEntries: (issue) ->
+  getTimeEntries: (issue, dtInicial, dtFinal) ->
+    dateFilter = ""
+    if dtInicial and dtFinal
+      try
+        dtIniArr = dtInicial.split "/"
+        dtFimArr = dtFinal.split "/"
+        dtIni = "#{dtIniArr[2]-dtIniArr[1]-dtIniArr[0]}"
+        dtFim = "#{dtFimArr[2]-dtFimArr[1]-dtFimArr[0]}"
+        dateFilter = "&spent_on=><#{dtIni}|#{dtFim}"
+      catch e
+        console.log e
+      
+
     new Promise (resolve, reject) ->
         console.log "Fazendo a requisição de tempo da issue #{issue}..."
         auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
         req = https.request
           host: environment.redmine.host
           port: 443
-          path: "/time_entries.json?issue_id=#{issue}"
+          path: "/time_entries.json?issue_id=#{issue}#{dateFilter}"
           method: "GET"
           headers: 
             "Content-Type": "application/json"

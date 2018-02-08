@@ -154,28 +154,28 @@
       });
     });
     app.get('/redmine/issues', function(req, res) {
-      var issuesArr, issuesList, promises;
-      issuesList = req.query.issues;
-      if (!issuesList) {
-        return res.render('redmine.ejs', {
-          issues: [],
-          issuesList: issuesList
-        });
+      var issuesArr, promises, ret;
+      ret = {
+        issues: [],
+        issuesList: req.query.issues,
+        inicial: req.query.inicial,
+        final: req.query.final
+      };
+      if (!ret.issuesList) {
+        return res.render('redmine.ejs', ret);
       }
-      issuesArr = issuesList.split(/[^\d]/);
+      issuesArr = ret.issuesList.split(/[^\d]/);
       promises = [];
       issuesArr.forEach(function(issueID, i, arr) {
         if (!issueID) {
           return;
         }
-        return promises.push(redmine.getIssue(issueID));
+        return promises.push(redmine.getIssue(issueID, ret.inicial, ret.final));
       });
       return Promise.all(promises).then(function(issues) {
         console.log("Resolveu as promessas..");
-        return res.render('redmine.ejs', {
-          issues: issues,
-          issuesList: issuesList
-        });
+        ret.issues = issues;
+        return res.render('redmine.ejs', ret);
       });
     });
   };

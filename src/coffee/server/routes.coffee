@@ -135,21 +135,26 @@ module.exports = (app, passport) ->
       req.response issue
 
   app.get '/redmine/issues', (req, res) ->
-    issuesList = req.query.issues
+    ret =
+      issues: []
+      issuesList: req.query.issues
+      inicial: req.query.inicial
+      final: req.query.final
 
-    return res.render 'redmine.ejs', {issues: [], issuesList: issuesList} if not issuesList
+    return res.render 'redmine.ejs', ret if not ret.issuesList
 
-    issuesArr = issuesList.split /[^\d]/
+    issuesArr = ret.issuesList.split /[^\d]/
 
     promises = []
 
     issuesArr.forEach (issueID, i, arr)->
       return if not issueID
-      promises.push redmine.getIssue issueID
+      promises.push redmine.getIssue issueID, inicial, final
 
     Promise.all(promises).then (issues) ->
       console.log "Resolveu as promessas.."
-      res.render 'redmine.ejs', {issues: issues, issuesList: issuesList}
+      ret.issues = issues
+      res.render 'redmine.ejs', ret
 
     # redmine.getIssue issuesList, (data, status) ->
     #   res.render 'redmine.ejs', {issues: [data.issue], issuesList: issuesList}

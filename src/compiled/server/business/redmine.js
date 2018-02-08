@@ -12,7 +12,7 @@
   // use this one for testing
   module.exports = function() {
     return {
-      getIssue: function(issue) {
+      getIssue: function(issue, dtInicial, dtFinal) {
         return new Promise((resolve, reject) => {
           var auth, req;
           console.log(`Fazendo a requisição da issue ${issue}...`);
@@ -42,7 +42,7 @@
               console.log(`Buscou ${obj.issue.id}`);
               // console.log JSON.stringify obj, null, 2
               // callback? obj, 200
-              return this.getTimeEntries(issue).then(function(times) {
+              return this.getTimeEntries(issue, dtInicial, dtFinal).then(function(times) {
                 obj.time_entries = times.time_entries;
                 return resolve(obj);
               });
@@ -60,7 +60,21 @@
           return req.end();
         });
       },
-      getTimeEntries: function(issue) {
+      getTimeEntries: function(issue, dtInicial, dtFinal) {
+        var dateFilter, dtFim, dtFimArr, dtIni, dtIniArr, e;
+        dateFilter = "";
+        if (dtInicial && dtFinal) {
+          try {
+            dtIniArr = dtInicial.split("/");
+            dtFimArr = dtFinal.split("/");
+            dtIni = `${dtIniArr[2] - dtIniArr[1] - dtIniArr[0]}`;
+            dtFim = `${dtFimArr[2] - dtFimArr[1] - dtFimArr[0]}`;
+            dateFilter = `&spent_on=><${dtIni}|${dtFim}`;
+          } catch (error) {
+            e = error;
+            console.log(e);
+          }
+        }
         return new Promise(function(resolve, reject) {
           var auth, req;
           console.log(`Fazendo a requisição de tempo da issue ${issue}...`);
@@ -68,7 +82,7 @@
           req = https.request({
             host: environment.redmine.host,
             port: 443,
-            path: `/time_entries.json?issue_id=${issue}`,
+            path: `/time_entries.json?issue_id=${issue}${dateFilter}`,
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -90,7 +104,7 @@
               return buffer += data;
             });
             return res.on("end", () => {
-              var e, obj;
+              var obj;
               if (buffer) {
                 try {
                   obj = JSON.parse(buffer);
