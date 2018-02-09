@@ -149,7 +149,7 @@ module.exports = (app, passport) ->
 
     issuesArr.forEach (issueID, i, arr)->
       return if not issueID
-      promises.push redmine.getIssue issueID, inicial, final
+      promises.push redmine.getIssue issueID, ret.inicial, ret.final
 
     Promise.all(promises).then (issues) ->
       console.log "Resolveu as promessas.."

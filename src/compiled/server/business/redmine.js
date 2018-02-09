@@ -1,11 +1,13 @@
 (function() {
   // # load up the user model
   // User = require('../models/user')
-  var environment, https;
+  var DateUtils, environment, https;
 
   https = require("https");
 
   environment = require('../config/environment')();
+
+  DateUtils = require("../utils/date");
 
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -61,18 +63,16 @@
         });
       },
       getTimeEntries: function(issue, dtInicial, dtFinal) {
-        var dateFilter, dtFim, dtFimArr, dtIni, dtIniArr, e;
+        var dateFilter, dtFim, dtIni, e;
         dateFilter = "";
         if (dtInicial && dtFinal) {
           try {
-            dtIniArr = dtInicial.split("/");
-            dtFimArr = dtFinal.split("/");
-            dtIni = `${dtIniArr[2] - dtIniArr[1] - dtIniArr[0]}`;
-            dtFim = `${dtFimArr[2] - dtFimArr[1] - dtFimArr[0]}`;
+            dtIni = DateUtils.getDateToFilter(dtInicial);
+            dtFim = DateUtils.getDateToFilter(dtFinal);
             dateFilter = `&spent_on=><${dtIni}|${dtFim}`;
           } catch (error) {
             e = error;
-            console.log(e);
+            console.log(`Não foi possível converter em data "${dtInicial}" e/ou "${dtFinal}".`);
           }
         }
         return new Promise(function(resolve, reject) {

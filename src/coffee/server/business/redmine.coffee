@@ -2,6 +2,7 @@
 # User = require('../models/user')
 https = require "https"
 environment = require('../config/environment')()
+DateUtils = require "../utils/date"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 # use this one for testing
 
@@ -54,13 +55,11 @@ module.exports = () ->
     dateFilter = ""
     if dtInicial and dtFinal
       try
-        dtIniArr = dtInicial.split "/"
-        dtFimArr = dtFinal.split "/"
-        dtIni = "#{dtIniArr[2]-dtIniArr[1]-dtIniArr[0]}"
-        dtFim = "#{dtFimArr[2]-dtFimArr[1]-dtFimArr[0]}"
+        dtIni = DateUtils.getDateToFilter dtInicial
+        dtFim = DateUtils.getDateToFilter dtFinal
         dateFilter = "&spent_on=><#{dtIni}|#{dtFim}"
       catch e
-        console.log e
+        console.log "Não foi possível converter em data \"#{dtInicial}\" e/ou \"#{dtFinal}\"."
       
 
     new Promise (resolve, reject) ->
