@@ -1,36 +1,26 @@
-define ["backbone", "vm"], (Backbone, Vm) ->
-	AppRouter = Backbone.Router.extend routes:
-		"sucesso": "sucesso"
-		"usuarios": "usuarios"
-		"usuario": "usuario"
-		"usuario/:id": "usuario"
-		"*actions": "defaultAction"
+define (require, exports, module) ->
+  Backbone = require "backbone"
 
-	initialize = (options) ->
-		appView = options.appView
-		router = new AppRouter(options)
+  class Router extends Backbone.Router
+    routes:
+      "": -> Backbone.Events.trigger "view:index"
+      
+      "sprints": -> Backbone.Events.trigger "view:sprintLista"
+      "sprint": -> Backbone.Events.trigger "view:sprintCadastro"
+      "sprints/:id": -> Backbone.Events.trigger "view:sprintCadastro", id
 
-		router.on "route:sucesso", ->
-			require ["views/login/sucesso"], (ViewPage) ->
-				viewPage = Vm.create appView, "SucessoView", ViewPage
-				viewPage.render()
+    #   "calculo" : "calculo"
+    #   "calculo/load/:id" : "calculo"
+    #   "calculo/new" : -> Backbone.Events.trigger "view:calculo.calculo.new"
+    #   "calculo/:subview" : (subview)-> Backbone.Events.trigger "view:calculo.calculo", subview
+            
+    #   "usuario": -> Backbone.Events.trigger "view:usuario.new"
+    #   "usuario/ativacao/sucesso": -> Backbone.Events.trigger "view:usuario.ativacao.sucesso"
+      
+    #   "login": -> Backbone.Events.trigger "view:login"
 
-		router.on "route:usuario", (id) ->
-			require ["views/usuario/cadastroView"], (ViewPage) ->
-				viewPage = Vm.create appView, "CadastroUsuarioView", ViewPage, 
-					id : id
-				viewPage.render()
+    #   # "error": -> Backbone.Events.trigger "view:error"
+    
+    # calculo: (id)-> Backbone.Events.trigger "view:calculo.calculo", id
 
-		router.on "route:usuarios", (id) ->
-			require ["views/usuario/listaView"], (ViewPage) ->
-				viewPage = Vm.create appView, "ListaUsuarioView", ViewPage
-				viewPage.render()
-
-		router.on "route:defaultAction", ->
-			require ["views/login/loginView"], (ViewPage) ->
-				viewPage = Vm.create appView, "LoginView", ViewPage
-				viewPage.render()
-
-		Backbone.history.start()
-
-	initialize: initialize
+  module.exports = Router

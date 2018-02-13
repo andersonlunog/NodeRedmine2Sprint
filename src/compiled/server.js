@@ -26,6 +26,8 @@
 
   environment = require('./server/config/environment')();
 
+  app.use(express.static(`${__dirname}/public`));
+
   // configuration ===============================================================
   mongoose.connect(environment.database.uri);
 
@@ -54,7 +56,7 @@
   // set up ejs for templating
   // required for passport
   app.use(session({
-    secret: 'ilovescotchscotchyscotchscotch',
+    secret: '708dc6f7-5b0f-4863-9aea-7809171a1172',
     resave: true,
     saveUninitialized: true
   }));
@@ -68,7 +70,9 @@
 
   // use connect-flash for flash messages stored in session
   // routes ======================================================================
-  require('./server/routes.js')(app, passport);
+  require('./server/routes/routes.js')(app, passport);
+
+  require('./server/routes/sprint.js')(app);
 
   // load our routes and pass in our app and fully configured passport
   // launch ======================================================================

@@ -12,6 +12,8 @@ cookieParser = require('cookie-parser')
 bodyParser = require('body-parser')
 session = require('express-session')
 environment = require('./server/config/environment')()
+app.use express.static "#{__dirname}/public"
+
 # configuration ===============================================================
 mongoose.connect environment.database.uri
 # connect to our database
@@ -30,7 +32,7 @@ app.set 'views', './server/views'
 # set up ejs for templating
 # required for passport
 app.use session(
-  secret: 'ilovescotchscotchyscotchscotch'
+  secret: '708dc6f7-5b0f-4863-9aea-7809171a1172'
   resave: true
   saveUninitialized: true)
 app.use passport.initialize()
@@ -39,7 +41,8 @@ app.use passport.session()
 app.use flash()
 # use connect-flash for flash messages stored in session
 # routes ======================================================================
-require('./server/routes.js') app, passport
+require('./server/routes/routes.js') app, passport
+require('./server/routes/sprint.js') app
 # load our routes and pass in our app and fully configured passport
 # launch ======================================================================
 app.listen port

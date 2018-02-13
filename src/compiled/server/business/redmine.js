@@ -126,6 +126,52 @@
           });
           return req.end();
         });
+      },
+      getUser: function(id) {
+        return new Promise(function(resolve, reject) {
+          var auth, req;
+          console.log(`Fazendo a requisição de usuário ID ${id}...`);
+          auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
+          req = https.request({
+            host: environment.redmine.host,
+            port: 443,
+            path: `/users/${id}.json`,
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": auth
+            }
+          }, function(res) {
+            var buffer;
+            res.setEncoding("utf8");
+            if (res.statusCode !== 200) {
+              console.log(`Usuário ${id} com status ${res.statusCode}!`);
+            }
+            buffer = "";
+            res.on("data", (data) => {
+              return buffer += data;
+            });
+            return res.on("end", () => {
+              var e, obj;
+              if (buffer) {
+                try {
+                  obj = JSON.parse(buffer);
+                  return resolve(obj);
+                } catch (error) {
+                  e = error;
+                  return resolve({
+                    user: {}
+                  });
+                }
+              }
+            });
+          });
+          req.on("error", (e) => {
+            console.error(e);
+            return reject(e);
+          });
+          return req.end();
+        });
       }
     };
   };

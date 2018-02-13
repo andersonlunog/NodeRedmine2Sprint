@@ -103,3 +103,39 @@ module.exports = () ->
           reject e
 
         req.end()
+
+  getUser: (id) ->
+    new Promise (resolve, reject) ->
+        console.log "Fazendo a requisição de usuário ID #{id}..."
+        auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
+        req = https.request
+          host: environment.redmine.host
+          port: 443
+          path: "/users/#{id}.json"
+          method: "GET"
+          headers: 
+            "Content-Type": "application/json"
+            "Authorization": auth
+        , (res) ->
+          res.setEncoding "utf8"
+          if res.statusCode != 200
+            console.log "Usuário #{id} com status #{res.statusCode}!"
+
+          buffer = ""
+
+          res.on "data", (data) => 
+            buffer += data
+
+          res.on "end", =>
+            if buffer
+              try
+                obj = JSON.parse buffer
+                resolve obj
+              catch e
+                resolve user: {}
+
+        req.on "error", (e) =>
+          console.error e
+          reject e
+
+        req.end()

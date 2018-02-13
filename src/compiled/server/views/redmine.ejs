@@ -85,7 +85,7 @@
             <td><%= issue.estimated_hours ? issue.estimated_hours.toLocaleString().replace(".", ",") : "" %></td>
             <td><%= issue.spent_hours ? issue.spent_hours.toLocaleString().replace(".", ",") : "" %></td>
             <td><%= time_entries_sum %></td>
-            <td><%= time_entries_str %></td>
+            <td style="white-space: pre-line;"><%= time_entries_str %></td>
           </tr>
           <% }); %>
         </tbody>

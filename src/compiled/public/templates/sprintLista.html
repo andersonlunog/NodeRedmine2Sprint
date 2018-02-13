@@ -1,0 +1,29 @@
+<div class="container">
+  <div class="row-fluid">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Início</th>
+          <th>Fim</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%_.each(sprints, function(sprint) {%>
+        <tr>
+          <td><%= sprint.attributes.nome %></td>
+          <td><%= sprint.attributes.inicio %></td>
+          <td><%= sprint.attributes.fim %></td>
+          <td>
+            <a class="btn btn-mini btn-primary" href="#/sprint/<%= sprint.id %>">Editar</a>
+            <a class="btn btn-mini btn-danger btn-delete" data-id="<%= sprint.id %>">Del</a>
+          </td>
+        </tr>
+        <%})%>
+      </tbody>    
+    </table>
+    <a class="btn btn-primary" id="btn-salvar">Salvar</a>         
+    <a class="btn" href="#/sprint">Novo</a>
+  </div>
+</div>

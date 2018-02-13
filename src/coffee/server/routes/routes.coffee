@@ -1,4 +1,4 @@
-redmine = require('./business/redmine')()
+redmine = require('../business/redmine')()
 # route middleware to ensure user is logged in
 
 isLoggedIn = (req, res, next) ->
@@ -8,16 +8,17 @@ isLoggedIn = (req, res, next) ->
   return
 
 module.exports = (app, passport) ->
-  # normal routes ===============================================================
-  # show the home page (will also have our login links)
+  app.get "/bkb", (req, res) ->
+    res.redirect "/index-bkb.html"
+
   app.get '/', (req, res) ->
     res.render 'index.ejs'
     return
-  # PROFILE SECTION =========================
+
   app.get '/profile', isLoggedIn, (req, res) ->
     res.render 'profile.ejs', user: req.user
     return
-  # LOGOUT ==============================
+    
   app.get '/logout', (req, res) ->
     req.logout()
     res.redirect '/'
@@ -130,6 +131,13 @@ module.exports = (app, passport) ->
     return
 
   # request para redmine ---------------------------------
+  app.get "/redmine/users", (req, res) ->    
+    promises = []
+
+    for i in [0..100]
+      redmine.getUser(i).then (user) ->
+        console.log user
+
   app.get '/redmine/issue', (req, res) ->
     redmine.getIssue(req.query.issue).then (issue) ->
       req.response issue

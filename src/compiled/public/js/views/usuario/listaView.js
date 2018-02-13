@@ -35,7 +35,7 @@
 
       };
 
-      UsuariosView.prototype.el = ".page";
+      UsuariosView.prototype.el = ".mid-container";
 
       UsuariosView.prototype.template = _.template(Template);
 

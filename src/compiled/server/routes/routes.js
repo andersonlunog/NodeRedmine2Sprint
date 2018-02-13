@@ -1,7 +1,7 @@
 (function() {
   var isLoggedIn, redmine;
 
-  redmine = require('./business/redmine')();
+  redmine = require('../business/redmine')();
 
   // route middleware to ensure user is logged in
   isLoggedIn = function(req, res, next) {
@@ -12,18 +12,17 @@
   };
 
   module.exports = function(app, passport) {
-    // normal routes ===============================================================
-    // show the home page (will also have our login links)
+    app.get("/bkb", function(req, res) {
+      return res.redirect("/index-bkb.html");
+    });
     app.get('/', function(req, res) {
       res.render('index.ejs');
     });
-    // PROFILE SECTION =========================
     app.get('/profile', isLoggedIn, function(req, res) {
       res.render('profile.ejs', {
         user: req.user
       });
     });
-    // LOGOUT ==============================
     app.get('/logout', function(req, res) {
       req.logout();
       res.redirect('/');
@@ -148,6 +147,17 @@
       });
     });
     // request para redmine ---------------------------------
+    app.get("/redmine/users", function(req, res) {
+      var i, j, promises, results;
+      promises = [];
+      results = [];
+      for (i = j = 0; j <= 100; i = ++j) {
+        results.push(redmine.getUser(i).then(function(user) {
+          return console.log(user);
+        }));
+      }
+      return results;
+    });
     app.get('/redmine/issue', function(req, res) {
       return redmine.getIssue(req.query.issue).then(function(issue) {
         return req.response(issue);
