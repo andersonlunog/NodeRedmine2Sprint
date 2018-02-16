@@ -12,7 +12,8 @@ module.exports = (app) ->
       res.send user
     , (e)->
       console.log e
-      res.send {}
+      res.status(404).send "Usuário #{id} não encontrado"
+      # res.send {}
     # console.log "Fazendo a requisição de usuário ID #{id}..."
     # auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
     # reqHttp = https.request

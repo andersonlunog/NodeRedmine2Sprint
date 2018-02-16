@@ -15,12 +15,13 @@
         return res.send(user);
       }, function(e) {
         console.log(e);
-        return res.send({});
+        return res.status(404).send(`Usuário ${id} não encontrado`);
       });
     });
   };
 
-  // console.log "Fazendo a requisição de usuário ID #{id}..."
+  // res.send {}
+// console.log "Fazendo a requisição de usuário ID #{id}..."
 // auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
 // reqHttp = https.request
 //   host: environment.redmine.host

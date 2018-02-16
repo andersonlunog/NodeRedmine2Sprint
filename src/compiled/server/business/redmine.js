@@ -146,8 +146,8 @@
             res.setEncoding("utf8");
             if (res.statusCode !== 200) {
               console.log(`Usuário ${id} com status ${res.statusCode}!`);
-              resolve({
-                user: {}
+              reject({
+                statusCode: res.statusCode
               });
             }
             buffer = "";

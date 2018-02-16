@@ -15,6 +15,8 @@ define (require, exports, module) ->
       "click #btn-buscar": "buscar"
 
     initialize: ->
+      @inicio = 50
+      @fim = 60
       @collection = new Backbone.Collection()
       @render()
       @collection.on "add remove reset", @render, @
@@ -42,19 +44,38 @@ define (require, exports, module) ->
       console.log "Buscando os usuário de #{@inicio} a #{@fim}"
       @buscando = true
       @collection.reset()
-      id = @inicio
-      requisitar = =>
-        $.get "/usuarioRedmine?id=#{id}", (u)=>
-          unless _.isEmpty(u) or _.isEmpty(u.user)
-            @collection.add u.user 
-          else
-            console.log "UID #{id} não encontrado..."
-          id++
-          if id <= @fim
-            requisitar()
-          else
-            @buscando = false
-            @render()
-      requisitar()
+
+      #*******
+      for i in [@inicio..@fim]
+        ((id)=>
+          $.get "/usuarioRedmine?id=#{id}", (u)=>
+            unless _.isEmpty(u) or _.isEmpty(u.user)
+              @collection.add u.user 
+            else
+              console.log "UID #{id} não encontrado..."
+          .fail (e)=>
+            console.log e.responseText
+          .always ()=>
+            if id >= @fim
+              @buscando = false
+              @render()
+        )(i)
+      #******
+
+
+      # id = @inicio
+      # requisitar = =>
+      #   $.get "/usuarioRedmine?id=#{id}", (u)=>
+      #     unless _.isEmpty(u) or _.isEmpty(u.user)
+      #       @collection.add u.user 
+      #     else
+      #       console.log "UID #{id} não encontrado..."
+      #     id++
+      #     if id <= @fim
+      #       requisitar()
+      #     else
+      #       @buscando = false
+      #       @render()
+      # requisitar()
 
   module.exports = ImportarUsuariosView
