@@ -72,7 +72,9 @@
   // routes ======================================================================
   require('./server/routes/routes.js')(app, passport);
 
-  require('./server/routes/sprint.js')(app);
+  require('./server/routes/sprintRoute.js')(app);
+
+  require('./server/routes/usuarioRoute.js')(app);
 
   // load our routes and pass in our app and fully configured passport
   // launch ======================================================================

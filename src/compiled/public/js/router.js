@@ -15,6 +15,9 @@
         "sprint": function() {
           return Backbone.Events.trigger("view:sprintCadastro");
         },
+        "importar-usuarios": function() {
+          return Backbone.Events.trigger("view:importarUsuarios");
+        },
         "sprints/:id": function() {
           return Backbone.Events.trigger("view:sprintCadastro", id);
         }

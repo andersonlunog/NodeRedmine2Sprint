@@ -146,6 +146,9 @@
             res.setEncoding("utf8");
             if (res.statusCode !== 200) {
               console.log(`Usuário ${id} com status ${res.statusCode}!`);
+              resolve({
+                user: {}
+              });
             }
             buffer = "";
             res.on("data", (data) => {
