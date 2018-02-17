@@ -4,7 +4,7 @@
     UsuarioRedmineCollection = (function() {
       class UsuarioRedmineCollection extends BaseCollection {};
 
-      UsuarioRedmineCollection.prototype.model = UsuarioRedmineModele;
+      UsuarioRedmineCollection.prototype.model = UsuarioRedmineModel;
 
       UsuarioRedmineCollection.prototype.url = "/usuariosRedmine";
 

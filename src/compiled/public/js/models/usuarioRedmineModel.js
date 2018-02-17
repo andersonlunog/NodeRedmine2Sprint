@@ -5,7 +5,6 @@
       class UsuarioRedmineModel extends BaseModel {};
 
       UsuarioRedmineModel.prototype.defaults = {
-        id: "",
         nome: ""
       };
 

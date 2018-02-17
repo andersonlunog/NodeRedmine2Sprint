@@ -4,7 +4,7 @@ define ["underscore"
   "models/usuarioRedmineModel"
 ], (_, Backbone, BaseCollection, UsuarioRedmineModel) ->
   class UsuarioRedmineCollection extends BaseCollection
-    model: UsuarioRedmineModele
+    model: UsuarioRedmineModel
     url: "/usuariosRedmine"
 
   UsuarioRedmineCollection

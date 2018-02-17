@@ -1,4 +1,5 @@
 redmine = require('../business/redmine')()
+UsuarioRedmine = require('../models/usuarioRedmine')
 
 # https = require "https"
 # environment = require('../config/environment')()
@@ -6,46 +7,42 @@ redmine = require('../business/redmine')()
 # process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 module.exports = (app) ->
-  app.get "/usuarioRedmine", (req, res) ->
+  app.get "/usuarioDoRedmine", (req, res) ->
     id = req.query.id
     redmine.getUser(id).then (user) ->
       res.send user
     , (e)->
       console.log e
       res.status(404).send "Usuário #{id} não encontrado"
-      # res.send {}
-    # console.log "Fazendo a requisição de usuário ID #{id}..."
-    # auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
-    # reqHttp = https.request
-    #   host: environment.redmine.host
-    #   port: 443
-    #   path: "/users/#{id}.json"
-    #   method: "GET"
-    #   headers: 
-    #     "Content-Type": "application/json"
-    #     "Authorization": auth
-    # , (resHttp) ->
-    #   resHttp.setEncoding "utf8"
-    #   if resHttp.statusCode != 200
-    #     console.log "Usuário #{id} com status #{resHttp.statusCode}!"
 
-    #   buffer = ""
-
-    #   resHttp.on "data", (data) => 
-    #     buffer += data
-
-    #   resHttp.on "end", =>
-    #     if buffer
-    #       try
-    #         obj = JSON.parse buffer
-    #         res.send obj
-    #       catch e
-    #         res.send {}
-
-    # reqHttp.on "error", (e) =>
-    #   console.error e
-    #   res.send {}
-
-    # reqHttp.end()
+  app.get "/usuariosRedmine", (req, res) ->
+    UsuarioRedmine.find {}, (err, users) ->
+      return res.status(400).send(err) if err
+      res.send users
+  
+  app.post "/usuariosRedmine", (req, res) ->
+    usuarios = req.body
+    usuarios.forEach (usuario)->
+      UsuarioRedmine.findOne { redmineID: usuario.redmineID }, (err, usr)->
+        return console.log err if err
+        if usr
+          usr.save usuario
+          console.log "#{usuario.nome} atualizado"
+        else
+          UsuarioRedmine.create usuario, (err1, usr1)->
+            return console.log err1 if err1
+            console.log "#{usuario.nome} inserido"
+            console.log usr1
+    
+    res.send 200
+      
+      #   newUser = new User
+      #   newUser.email = email
+      #   newUser.password = newUser.generateHash(password)
+      #   newUser.save (err) ->
+      #     if err
+      #       return done(err)
+      #     done null, newUser
+      # return
     
   return

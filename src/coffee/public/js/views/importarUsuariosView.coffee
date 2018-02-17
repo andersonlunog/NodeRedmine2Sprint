@@ -4,6 +4,7 @@ define (require, exports, module) ->
   $ = require "jquery"
   Backbone = require "backbone"
   template = require "text!templates/importarUsuarios.html"  
+  UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
   require "bootstrap"
 
   class ImportarUsuariosView extends Backbone.View
@@ -13,6 +14,8 @@ define (require, exports, module) ->
 
     events:
       "click #btn-buscar": "buscar"
+      "click #btn-importar": "importar"
+      "click #frm-usuarios tbody tr": "trclick"
 
     initialize: ->
       @inicio = 50
@@ -29,15 +32,17 @@ define (require, exports, module) ->
         inicio: @inicio
         fim: @fim
 
-      if @buscando        
-        @$("#btn-buscar span").show()
-        @$("#btn-buscar").text("Buscando...").attr("disabled", true).append """ <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>"""
-      else
-        @$("#btn-buscar span").hide()
-        @$("#btn-buscar").text("Buscar ").attr "disabled", false
+      @aguardeBtn("#btn-buscar", "Buscar", "Buscando...", !@buscando)
+      @aguardeBtn("#btn-importar", "Importar", "Importar", !@buscando)
       @
 
-    buscar: (ev)->      
+    aguardeBtn: (btnSel, labelEnabled, labelDisabled, enabled)->
+      if enabled
+        @$("#{btnSel}").html(labelEnabled).attr "disabled", false
+      else
+        @$("#{btnSel}").html(labelDisabled).attr("disabled", true).append """ <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>"""
+
+    buscar: (ev)->
       ev.preventDefault()
       @inicio = parseInt $("#input-inicio").val()
       @fim = parseInt $("#input-fim").val()
@@ -48,7 +53,7 @@ define (require, exports, module) ->
       #*******
       for i in [@inicio..@fim]
         ((id)=>
-          $.get "/usuarioRedmine?id=#{id}", (u)=>
+          $.get "/usuarioDoRedmine?id=#{id}", (u)=>
             unless _.isEmpty(u) or _.isEmpty(u.user)
               @collection.add u.user 
             else
@@ -77,5 +82,34 @@ define (require, exports, module) ->
       #       @buscando = false
       #       @render()
       # requisitar()
+
+    trclick: (ev)->
+      target = @$(ev.target)
+      chk = target.closest("tr").find("input:checkbox")
+      return if chk[0] is target[0]
+      chk.prop("checked", !chk.is(":checked"))
+
+    importar: (ev)->
+      ev.preventDefault()
+      that = @
+      usuarioRedmineCollection = new UsuarioRedmineCollection
+      usuarioRedmineCollection.fetch
+        success: (collection, response) =>
+          console.log response
+          checks = @$ "#frm-usuarios input:checked"
+          checks.each (i)->
+            id = parseInt $(@).attr("name")
+            mdl = that.collection.get id
+            unless usuarioRedmineCollection.findWhere redmineID: id
+              usuarioRedmineCollection.add
+                redmineID: id
+                nome: "#{mdl.get("firstname")} #{mdl.get("lastname")}"
+            if i is checks.length - 1
+              usuarioRedmineCollection.sync "create", usuarioRedmineCollection
+
+          # @collection.reset response
+          # @render()
+        error: (e) ->
+          alert JSON.stringify e
 
   module.exports = ImportarUsuariosView

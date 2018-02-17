@@ -1,10 +1,11 @@
 (function() {
   define(function(require, exports, module) {
-    var $, Backbone, ImportarUsuariosView, _, template;
+    var $, Backbone, ImportarUsuariosView, UsuarioRedmineCollection, _, template;
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
     template = require("text!templates/importarUsuarios.html");
+    UsuarioRedmineCollection = require("models/usuarioRedmineCollection");
     require("bootstrap");
     ImportarUsuariosView = (function() {
       class ImportarUsuariosView extends Backbone.View {
@@ -24,14 +25,17 @@
             inicio: this.inicio,
             fim: this.fim
           }));
-          if (this.buscando) {
-            this.$("#btn-buscar span").show();
-            this.$("#btn-buscar").text("Buscando...").attr("disabled", true).append(" <span class=\"glyphicon glyphicon-refresh\" aria-hidden=\"true\"></span>");
-          } else {
-            this.$("#btn-buscar span").hide();
-            this.$("#btn-buscar").text("Buscar ").attr("disabled", false);
-          }
+          this.aguardeBtn("#btn-buscar", "Buscar", "Buscando...", !this.buscando);
+          this.aguardeBtn("#btn-importar", "Importar", "Importar", !this.buscando);
           return this;
+        }
+
+        aguardeBtn(btnSel, labelEnabled, labelDisabled, enabled) {
+          if (enabled) {
+            return this.$(`${btnSel}`).html(labelEnabled).attr("disabled", false);
+          } else {
+            return this.$(`${btnSel}`).html(labelDisabled).attr("disabled", true).append(" <span class=\"glyphicon glyphicon-refresh\" aria-hidden=\"true\"></span>");
+          }
         }
 
         buscar(ev) {
@@ -46,7 +50,7 @@
           //*******
           for (i = j = ref = this.inicio, ref1 = this.fim; ref <= ref1 ? j <= ref1 : j >= ref1; i = ref <= ref1 ? ++j : --j) {
             results.push(((id) => {
-              return $.get(`/usuarioRedmine?id=${id}`, (u) => {
+              return $.get(`/usuarioDoRedmine?id=${id}`, (u) => {
                 if (!(_.isEmpty(u) || _.isEmpty(u.user))) {
                   return this.collection.add(u.user);
                 } else {
@@ -65,6 +69,67 @@
           return results;
         }
 
+        //******
+
+        // id = @inicio
+        // requisitar = =>
+        //   $.get "/usuarioRedmine?id=#{id}", (u)=>
+        //     unless _.isEmpty(u) or _.isEmpty(u.user)
+        //       @collection.add u.user 
+        //     else
+        //       console.log "UID #{id} não encontrado..."
+        //     id++
+        //     if id <= @fim
+        //       requisitar()
+        //     else
+        //       @buscando = false
+        //       @render()
+        // requisitar()
+        trclick(ev) {
+          var chk, target;
+          target = this.$(ev.target);
+          chk = target.closest("tr").find("input:checkbox");
+          if (chk[0] === target[0]) {
+            return;
+          }
+          return chk.prop("checked", !chk.is(":checked"));
+        }
+
+        importar(ev) {
+          var that, usuarioRedmineCollection;
+          ev.preventDefault();
+          that = this;
+          usuarioRedmineCollection = new UsuarioRedmineCollection;
+          return usuarioRedmineCollection.fetch({
+            success: (collection, response) => {
+              var checks;
+              console.log(response);
+              checks = this.$("#frm-usuarios input:checked");
+              return checks.each(function(i) {
+                var id, mdl;
+                id = parseInt($(this).attr("name"));
+                mdl = that.collection.get(id);
+                if (!usuarioRedmineCollection.findWhere({
+                  redmineID: id
+                })) {
+                  usuarioRedmineCollection.add({
+                    redmineID: id,
+                    nome: `${mdl.get("firstname")} ${mdl.get("lastname")}`
+                  });
+                }
+                if (i === checks.length - 1) {
+                  return usuarioRedmineCollection.sync("create", usuarioRedmineCollection);
+                }
+              });
+            },
+            // @collection.reset response
+            // @render()
+            error: function(e) {
+              return alert(JSON.stringify(e));
+            }
+          });
+        }
+
       };
 
       ImportarUsuariosView.prototype.el = ".mid-container";
@@ -72,28 +137,14 @@
       ImportarUsuariosView.prototype.template = _.template(template);
 
       ImportarUsuariosView.prototype.events = {
-        "click #btn-buscar": "buscar"
+        "click #btn-buscar": "buscar",
+        "click #btn-importar": "importar",
+        "click #frm-usuarios tbody tr": "trclick"
       };
 
       return ImportarUsuariosView;
 
     }).call(this);
-    //******
-
-    // id = @inicio
-    // requisitar = =>
-    //   $.get "/usuarioRedmine?id=#{id}", (u)=>
-    //     unless _.isEmpty(u) or _.isEmpty(u.user)
-    //       @collection.add u.user 
-    //     else
-    //       console.log "UID #{id} não encontrado..."
-    //     id++
-    //     if id <= @fim
-    //       requisitar()
-    //     else
-    //       @buscando = false
-    //       @render()
-    // requisitar()
     return module.exports = ImportarUsuariosView;
   });
 
