@@ -29,30 +29,49 @@
       });
     });
     app.post("/usuariosRedmine", function(req, res) {
-      var usuarios;
+      var ret, returnIfLast, usuarios;
       usuarios = req.body;
-      usuarios.forEach(function(usuario) {
+      ret = {
+        usuariosIncluidos: [],
+        usuariosAtualizados: [],
+        erros: []
+      };
+      returnIfLast = function(i) {
+        if (i >= usuarios.length - 1) {
+          return res.send(ret);
+        }
+      };
+      return usuarios.forEach(function(usuario, i) {
         return UsuarioRedmine.findOne({
           redmineID: usuario.redmineID
         }, function(err, usr) {
           if (err) {
-            return console.log(err);
-          }
-          if (usr) {
-            usr.save(usuario);
-            return console.log(`${usuario.nome} atualizado`);
+            ret.erros.push(err);
+            console.log(`Houve um erro no usuario ${usuario.nome}`);
+            return returnIfLast(i);
           } else {
-            return UsuarioRedmine.create(usuario, function(err1, usr1) {
-              if (err1) {
-                return console.log(err1);
-              }
-              console.log(`${usuario.nome} inserido`);
-              return console.log(usr1);
-            });
+            if (usr) {
+              return usr.save(usuario).then(function(usr1) {
+                ret.usuariosAtualizados.push(usr1);
+                console.log(`Atualizado usuario ${usuario.nome}`);
+                return returnIfLast(i);
+              });
+            } else {
+              return UsuarioRedmine.create(usuario, function(err1, usr1) {
+                if (err1) {
+                  ret.erros.push(err1);
+                  console.log(`Houve um erro no usuario ${usuario.nome}`);
+                  return returnIfLast(i);
+                } else {
+                  ret.usuariosIncluidos.push(usr1);
+                  console.log(`Inserido usuario ${usuario.nome}`);
+                  return returnIfLast(i);
+                }
+              });
+            }
           }
         });
       });
-      return res.send(200);
     });
   };
 

@@ -96,15 +96,19 @@
         }
 
         importar(ev) {
-          var that, usuarioRedmineCollection;
+          var checks, that, usuarioRedmineCollection;
           ev.preventDefault();
           that = this;
+          this.aguardeBtn("#btn-importar", "Importar", "Importar", false);
+          checks = this.$("#frm-usuarios input:checked");
+          if (!checks.length) {
+            this.aguardeBtn("#btn-importar", "Importar", "Importar", true);
+            alert("Nenhum usuário selecionado.");
+            return;
+          }
           usuarioRedmineCollection = new UsuarioRedmineCollection;
           return usuarioRedmineCollection.fetch({
             success: (collection, response) => {
-              var checks;
-              console.log(response);
-              checks = this.$("#frm-usuarios input:checked");
               return checks.each(function(i) {
                 var id, mdl;
                 id = parseInt($(this).attr("name"));
@@ -118,14 +122,27 @@
                   });
                 }
                 if (i === checks.length - 1) {
-                  return usuarioRedmineCollection.sync("create", usuarioRedmineCollection);
+                  return usuarioRedmineCollection.sync("create", usuarioRedmineCollection, {
+                    success: function(msg) {
+                      console.log(msg);
+                      that.aguardeBtn("#btn-importar", "Importar", "Importar", true);
+                      return alert("Usuários importados com sucesso!");
+                    },
+                    error: function(e) {
+                      console.log(e);
+                      that.aguardeBtn("#btn-importar", "Importar", "Importar", true);
+                      return alert("Houve um erro ao importar usuários!/r/nConsulte o log.");
+                    }
+                  });
                 }
               });
             },
             // @collection.reset response
             // @render()
             error: function(e) {
-              return alert(JSON.stringify(e));
+              console.log(e);
+              that.aguardeBtn("#btn-importar", "Importar", "Importar", true);
+              return alert("Houve um erro ao importar usuários!/r/nConsulte o log.");
             }
           });
         }

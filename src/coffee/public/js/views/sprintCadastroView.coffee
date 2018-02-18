@@ -6,6 +6,7 @@ define (require, exports, module) ->
   template = require "text!templates/sprintCadastro.html"
   sprintModel = require "models/sprintModel"
   BindModelForm = require "helpers/bindModelForm"
+  UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
   require "bootstrap"
 
   class SprintCadastroView extends Backbone.View
@@ -20,12 +21,21 @@ define (require, exports, module) ->
       @model = new sprintModel
       @modelForm = new BindModelForm @model
       @model.on "change", @render, @
-      @render()
+      @usuarioRedmineCollection = new UsuarioRedmineCollection
+      @usuarioRedmineCollection.fetch
+        success: (collection, response) =>
+          @render()
+        error: (e) ->
+          console.log e
+          alert "Houve um erro ao importar usuários!/r/nConsulte o log."
+      # @render()
       @
 
     render: ->
       that = this
-      $(@el).html @template()
+      $(@el).html @template 
+        usuarios: @usuarioRedmineCollection.models
+        chamados: []
       @modelForm.fetchForm @options.id
       @
 

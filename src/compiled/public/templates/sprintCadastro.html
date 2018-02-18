@@ -1,23 +1,67 @@
 <div class="container">
   <form id="frm-sprint">
     <div class="form-group">
-      <label class="control-label" for="input-nome">Nome *</label>
+      <label class="control-label" for="input-nome">Nome</label>
       <input type="text" class="form-control" id="input-nome" name="nome" placeholder="Nome" value="">
     </div>
     <div class="row">
       <div class="col-md-6">
         <div class="form-group">
-          <label class="control-label" for="input-inicio">Início *</label>
+          <label class="control-label" for="input-inicio">Início</label>
           <input type="text" class="form-control" id="input-inicio" name="inicio" placeholder="Início" value="">
         </div>
       </div>
-      <div class="col-md-6">        
+      <div class="col-md-6">
         <div class="form-group">
-          <label class="control-label" for="input-fim">Fim *</label>
+          <label class="control-label" for="input-fim">Fim</label>
           <input type="text" class="form-control" id="input-fim" name="fim" placeholder="Fim" value="">
         </div>
       </div>
     </div>
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nome</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%_.each(usuarios, function(usuario) { %>
+        <tr>
+          <td><input type="checkbox" name="<%= usuario.attributes.id %>"></td>          
+          <td><%= usuario.attributes.nome %></td>
+          <td></td>
+        </tr>
+        <%})%>
+      </tbody>
+    </table>
+
+    <div class="form-group">
+      <label class="control-label" for="txt-chamados">Chamados</label>
+      <textarea class="form-control" id="txt-chamados" name="chamados"></textarea>
+    </div>
+    <button id="btn-buscar" type="submit" class="btn btn-primary">Buscar</button>
+
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>ID</th>
+          <th>Titulo</th>
+          <th>Atribuição</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%_.each(chamados, function(chamados) { %>
+        <tr>
+          <td><input type="checkbox" name="<%= chamados.attributes.id %>"></td>
+          <td><%= chamados.attributes.id %></td>
+          <td><%= chamados.attributes.subject %></td>
+          <td><%= chamados.attributes.subject %></td>
+        </tr>
+        <%})%>
+      </tbody>
+    </table>
     <button id="btn-salvar" type="submit" class="btn btn-primary">Cadastrar</button>
     <a type="button" class="btn btn-default" href="#sprints">Cancelar</a>
   </form>

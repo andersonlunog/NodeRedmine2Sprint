@@ -22,19 +22,37 @@ module.exports = (app) ->
   
   app.post "/usuariosRedmine", (req, res) ->
     usuarios = req.body
-    usuarios.forEach (usuario)->
+    ret = 
+      usuariosIncluidos: []
+      usuariosAtualizados: []
+      erros: []
+
+    returnIfLast = (i)->
+      if i >= usuarios.length - 1
+          res.send ret
+
+    usuarios.forEach (usuario, i)->
       UsuarioRedmine.findOne { redmineID: usuario.redmineID }, (err, usr)->
-        return console.log err if err
-        if usr
-          usr.save usuario
-          console.log "#{usuario.nome} atualizado"
+        if err
+          ret.erros.push err
+          console.log "Houve um erro no usuario #{usuario.nome}"
+          returnIfLast i
         else
-          UsuarioRedmine.create usuario, (err1, usr1)->
-            return console.log err1 if err1
-            console.log "#{usuario.nome} inserido"
-            console.log usr1
-    
-    res.send 200
+          if usr
+            usr.save(usuario).then (usr1)->
+              ret.usuariosAtualizados.push usr1
+              console.log "Atualizado usuario #{usuario.nome}"
+              returnIfLast i
+          else
+            UsuarioRedmine.create usuario, (err1, usr1)->
+              if err1
+                ret.erros.push err1
+                console.log "Houve um erro no usuario #{usuario.nome}"
+                returnIfLast i
+              else
+                ret.usuariosIncluidos.push usr1
+                console.log "Inserido usuario #{usuario.nome}"
+                returnIfLast i
       
       #   newUser = new User
       #   newUser.email = email

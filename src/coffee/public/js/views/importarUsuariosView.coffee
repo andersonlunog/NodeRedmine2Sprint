@@ -92,11 +92,15 @@ define (require, exports, module) ->
     importar: (ev)->
       ev.preventDefault()
       that = @
+      @aguardeBtn "#btn-importar", "Importar", "Importar", false
+      checks = @$ "#frm-usuarios input:checked"
+      unless checks.length
+        @aguardeBtn "#btn-importar", "Importar", "Importar", true
+        alert "Nenhum usuário selecionado."
+        return
       usuarioRedmineCollection = new UsuarioRedmineCollection
       usuarioRedmineCollection.fetch
         success: (collection, response) =>
-          console.log response
-          checks = @$ "#frm-usuarios input:checked"
           checks.each (i)->
             id = parseInt $(@).attr("name")
             mdl = that.collection.get id
@@ -105,11 +109,21 @@ define (require, exports, module) ->
                 redmineID: id
                 nome: "#{mdl.get("firstname")} #{mdl.get("lastname")}"
             if i is checks.length - 1
-              usuarioRedmineCollection.sync "create", usuarioRedmineCollection
+              usuarioRedmineCollection.sync "create", usuarioRedmineCollection,
+                success: (msg)->
+                  console.log msg
+                  that.aguardeBtn "#btn-importar", "Importar", "Importar", true
+                  alert "Usuários importados com sucesso!"
+                error: (e)->
+                  console.log e
+                  that.aguardeBtn "#btn-importar", "Importar", "Importar", true
+                  alert "Houve um erro ao importar usuários!/r/nConsulte o log."
 
           # @collection.reset response
           # @render()
         error: (e) ->
-          alert JSON.stringify e
+          console.log e
+          that.aguardeBtn "#btn-importar", "Importar", "Importar", true
+          alert "Houve um erro ao importar usuários!/r/nConsulte o log."
 
   module.exports = ImportarUsuariosView
