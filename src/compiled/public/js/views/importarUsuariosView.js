@@ -1,11 +1,12 @@
 (function() {
   define(function(require, exports, module) {
-    var $, Backbone, ImportarUsuariosView, UsuarioRedmineCollection, _, template;
+    var $, Backbone, ImportarUsuariosView, UsuarioRedmineCollection, _, helper, template;
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
     template = require("text!templates/importarUsuarios.html");
     UsuarioRedmineCollection = require("models/usuarioRedmineCollection");
+    helper = require("helpers/helper");
     require("bootstrap");
     ImportarUsuariosView = (function() {
       class ImportarUsuariosView extends Backbone.View {
@@ -25,17 +26,9 @@
             inicio: this.inicio,
             fim: this.fim
           }));
-          this.aguardeBtn("#btn-buscar", "Buscar", "Buscando...", !this.buscando);
-          this.aguardeBtn("#btn-importar", "Importar", "Importar", !this.buscando);
+          helper.aguardeBtn.call(this, "#btn-buscar", "Buscar", "Buscando...", !this.buscando);
+          helper.aguardeBtn.call(this, "#btn-importar", "Importar", "Importar", !this.buscando);
           return this;
-        }
-
-        aguardeBtn(btnSel, labelEnabled, labelDisabled, enabled) {
-          if (enabled) {
-            return this.$(`${btnSel}`).html(labelEnabled).attr("disabled", false);
-          } else {
-            return this.$(`${btnSel}`).html(labelDisabled).attr("disabled", true).append(" <span class=\"glyphicon glyphicon-refresh\" aria-hidden=\"true\"></span>");
-          }
         }
 
         buscar(ev) {
@@ -99,10 +92,10 @@
           var checks, that, usuarioRedmineCollection;
           ev.preventDefault();
           that = this;
-          this.aguardeBtn("#btn-importar", "Importar", "Importar", false);
+          helper.aguardeBtn.call(this, "#btn-importar", "Importar", "Importar", false);
           checks = this.$("#frm-usuarios input:checked");
           if (!checks.length) {
-            this.aguardeBtn("#btn-importar", "Importar", "Importar", true);
+            helper.aguardeBtn.call(this, "#btn-importar", "Importar", "Importar", true);
             alert("Nenhum usuário selecionado.");
             return;
           }
@@ -125,12 +118,12 @@
                   return usuarioRedmineCollection.sync("create", usuarioRedmineCollection, {
                     success: function(msg) {
                       console.log(msg);
-                      that.aguardeBtn("#btn-importar", "Importar", "Importar", true);
+                      helper.aguardeBtn.call(that, "#btn-importar", "Importar", "Importar", true);
                       return alert("Usuários importados com sucesso!");
                     },
                     error: function(e) {
                       console.log(e);
-                      that.aguardeBtn("#btn-importar", "Importar", "Importar", true);
+                      helper.aguardeBtn.call(that, "#btn-importar", "Importar", "Importar", true);
                       return alert("Houve um erro ao importar usuários!/r/nConsulte o log.");
                     }
                   });
@@ -139,9 +132,9 @@
             },
             // @collection.reset response
             // @render()
-            error: function(e) {
+            error: (e) => {
               console.log(e);
-              that.aguardeBtn("#btn-importar", "Importar", "Importar", true);
+              helper.aguardeBtn.call(this, "#btn-importar", "Importar", "Importar", true);
               return alert("Houve um erro ao importar usuários!/r/nConsulte o log.");
             }
           });

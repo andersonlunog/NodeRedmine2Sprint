@@ -28,12 +28,10 @@
               "Content-Type": "application/json",
               "Authorization": auth
             }
-          // agent: false  # create a new agent just for this one request
           }, (res) => {
             res.setEncoding("utf8");
             if (res.statusCode !== 200) {
-              console.log(`statusCode para issue ${issue}:`, res.statusCode);
-              // callback? null, res.statusCode
+              console.log(`statusCode para issue ${issue}: ${res.statusCode}`);
               reject({
                 statusCode: res.statusCode
               });
@@ -41,23 +39,19 @@
             res.on("data", (d) => {
               var obj;
               obj = JSON.parse(d);
-              console.log(`Buscou ${obj.issue.id}`);
-              // console.log JSON.stringify obj, null, 2
-              // callback? obj, 200
+              console.log(`Encontrou ${obj.issue.id}`);
               return this.getTimeEntries(issue, dtInicial, dtFinal).then(function(times) {
                 obj.time_entries = times.time_entries;
                 return resolve(obj);
               });
             });
-            // process.stdout.write(obj);
             return res.on("end", () => {
               return console.log("Acabou");
             });
           });
           req.on("error", (e) => {
-            console.error(e);
-            // error? e
-            return resolve(e);
+            console.error("Ocorreu um erro ", e);
+            return reject(e);
           });
           return req.end();
         });
@@ -88,13 +82,10 @@
               "Content-Type": "application/json",
               "Authorization": auth
             }
-          // agent: false  # create a new agent just for this one request
           }, function(res) {
             var buffer;
             res.setEncoding("utf8");
             if (res.statusCode !== 200) {
-              // console.log "statusCode para issue #{issue}:", res.statusCode
-              // callback? null, res.statusCode
               reject({
                 statusCode: res.statusCode
               });
@@ -118,10 +109,8 @@
               }
             });
           });
-          // console.log "Chamou end..."
           req.on("error", (e) => {
-            console.error(e);
-            // error? e
+            console.error("Ocorreu um erro ", e);
             return reject(e);
           });
           return req.end();
@@ -170,7 +159,7 @@
             });
           });
           req.on("error", (e) => {
-            console.error(e);
+            console.error("Ocorreu um erro ", e);
             return reject(e);
           });
           return req.end();

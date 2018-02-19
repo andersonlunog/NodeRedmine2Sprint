@@ -5,6 +5,7 @@ define (require, exports, module) ->
   Backbone = require "backbone"
   template = require "text!templates/importarUsuarios.html"  
   UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
+  helper = require "helpers/helper"
   require "bootstrap"
 
   class ImportarUsuariosView extends Backbone.View
@@ -32,15 +33,9 @@ define (require, exports, module) ->
         inicio: @inicio
         fim: @fim
 
-      @aguardeBtn("#btn-buscar", "Buscar", "Buscando...", !@buscando)
-      @aguardeBtn("#btn-importar", "Importar", "Importar", !@buscando)
+      helper.aguardeBtn.call @,"#btn-buscar", "Buscar", "Buscando...", !@buscando
+      helper.aguardeBtn.call @, "#btn-importar", "Importar", "Importar", !@buscando
       @
-
-    aguardeBtn: (btnSel, labelEnabled, labelDisabled, enabled)->
-      if enabled
-        @$("#{btnSel}").html(labelEnabled).attr "disabled", false
-      else
-        @$("#{btnSel}").html(labelDisabled).attr("disabled", true).append """ <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>"""
 
     buscar: (ev)->
       ev.preventDefault()
@@ -92,10 +87,10 @@ define (require, exports, module) ->
     importar: (ev)->
       ev.preventDefault()
       that = @
-      @aguardeBtn "#btn-importar", "Importar", "Importar", false
+      helper.aguardeBtn.call @, "#btn-importar", "Importar", "Importar", false
       checks = @$ "#frm-usuarios input:checked"
       unless checks.length
-        @aguardeBtn "#btn-importar", "Importar", "Importar", true
+        helper.aguardeBtn.call @, "#btn-importar", "Importar", "Importar", true
         alert "Nenhum usuário selecionado."
         return
       usuarioRedmineCollection = new UsuarioRedmineCollection
@@ -112,18 +107,18 @@ define (require, exports, module) ->
               usuarioRedmineCollection.sync "create", usuarioRedmineCollection,
                 success: (msg)->
                   console.log msg
-                  that.aguardeBtn "#btn-importar", "Importar", "Importar", true
+                  helper.aguardeBtn.call that, "#btn-importar", "Importar", "Importar", true
                   alert "Usuários importados com sucesso!"
                 error: (e)->
                   console.log e
-                  that.aguardeBtn "#btn-importar", "Importar", "Importar", true
+                  helper.aguardeBtn.call that, "#btn-importar", "Importar", "Importar", true
                   alert "Houve um erro ao importar usuários!/r/nConsulte o log."
 
           # @collection.reset response
           # @render()
-        error: (e) ->
+        error: (e) =>
           console.log e
-          that.aguardeBtn "#btn-importar", "Importar", "Importar", true
+          helper.aguardeBtn.call @, "#btn-importar", "Importar", "Importar", true
           alert "Houve um erro ao importar usuários!/r/nConsulte o log."
 
   module.exports = ImportarUsuariosView

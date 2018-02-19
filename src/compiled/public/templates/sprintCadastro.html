@@ -8,17 +8,17 @@
       <div class="col-md-6">
         <div class="form-group">
           <label class="control-label" for="input-inicio">Início</label>
-          <input type="text" class="form-control" id="input-inicio" name="inicio" placeholder="Início" value="">
+          <input type="date" class="form-control" id="input-inicio" name="inicio" value="<%= inicio %>" placeholder="Início" value="">
         </div>
       </div>
       <div class="col-md-6">
         <div class="form-group">
           <label class="control-label" for="input-fim">Fim</label>
-          <input type="text" class="form-control" id="input-fim" name="fim" placeholder="Fim" value="">
+          <input type="date" class="form-control" id="input-fim" name="fim" value="<%= fim %>" placeholder="Fim" value="">
         </div>
       </div>
     </div>
-    <table class="table table-hover">
+    <table class="table table-hover" id="tbl-usuarios">
       <thead>
         <tr>
           <th>#</th>
@@ -28,8 +28,8 @@
       <tbody>
         <%_.each(usuarios, function(usuario) { %>
         <tr>
-          <td><input type="checkbox" name="<%= usuario.attributes.id %>"></td>          
-          <td><%= usuario.attributes.nome %></td>
+          <td><input type="checkbox" name="usuarioID" value="<%= usuario._id %>"></td>
+          <td><%= usuario.nome %></td>
           <td></td>
         </tr>
         <%})%>
@@ -38,31 +38,56 @@
 
     <div class="form-group">
       <label class="control-label" for="txt-chamados">Chamados</label>
-      <textarea class="form-control" id="txt-chamados" name="chamados"></textarea>
+      <textarea class="form-control" id="txt-chamados" name="chamadosTxt"><%= chamadosTxt %></textarea>
     </div>
     <button id="btn-buscar" type="submit" class="btn btn-primary">Buscar</button>
 
-    <table class="table table-hover">
+    <table class="table table-hover" id="tbl-chamados">
       <thead>
-        <tr>
-          <th>#</th>
-          <th>ID</th>
-          <th>Titulo</th>
-          <th>Atribuição</th>
-        </tr>
-      </thead>
-      <tbody>
-        <%_.each(chamados, function(chamados) { %>
-        <tr>
-          <td><input type="checkbox" name="<%= chamados.attributes.id %>"></td>
-          <td><%= chamados.attributes.id %></td>
-          <td><%= chamados.attributes.subject %></td>
-          <td><%= chamados.attributes.subject %></td>
-        </tr>
-        <%})%>
-      </tbody>
+          <tr>
+            <th>#</th>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Status</th>
+            <th>Atribuído</th>
+            <th>Estimado</th>
+            <th>Hs. Total</th>
+            <th>Hs. interv</th>            
+            <th>Lançamentos Horas</th>            
+          </tr>
+        </thead>
+        <tbody>
+          <% chamados.forEach(function(obj){ 
+            var issue = obj.issue;
+            if (!issue)
+              return;
+
+            var time_entries_sum = 0;
+            var time_entries_str = "";
+            if (obj.time_entries && obj.time_entries.length) {
+              obj.time_entries.forEach(function(time) { 
+                time_entries_sum += time.hours;
+                time_entries_str += time.user.name + " [" + time.hours + "][" + time.spent_on + "]\r\n";
+              }); 
+            }
+          %>
+          <tr>
+            <td><input type="checkbox" name="issueID" value="<%= issue.id %>"></td>
+            <td>
+              <a href="https://siacon.redmineup.com/issues/<%= issue.id%>" target="_blank">#<%= issue.id %></a>
+            </td>
+            <td><%= issue.subject %></td>
+            <td><%= issue.status ? issue.status.name : "" %></td>
+            <td><%= issue.assigned_to ? issue.assigned_to.name : "" %></td>
+            <td><%= issue.estimated_hours ? issue.estimated_hours.toLocaleString().replace(".", ",") : "" %></td>
+            <td><%= issue.spent_hours ? issue.spent_hours.toLocaleString().replace(".", ",") : "" %></td>
+            <td><%= time_entries_sum %></td>
+            <td style="white-space: pre-line;"><%= time_entries_str %></td>
+          </tr>
+          <% }); %>
+        </tbody>
     </table>
-    <button id="btn-salvar" type="submit" class="btn btn-primary">Cadastrar</button>
+    <button id="btn-salvar" type="submit" class="btn btn-primary">Salvar</button>
     <a type="button" class="btn btn-default" href="#sprints">Cancelar</a>
   </form>
 </div>

@@ -8,24 +8,26 @@
         this.model = model1;
       }
 
-      fetchForm(id, exceptions) {
+      fetchForm(id, exceptions, success, error) {
         if (!id) {
           return;
         }
         this.model.set("_id", id);
         return this.model.fetch({
           success: (model) => {
-            var key, ref, results, value;
+            var key, ref, value;
             ref = model.attributes;
-            results = [];
             for (key in ref) {
               value = ref[key];
               if (exceptions && indexOf.call(exceptions, key) >= 0) {
                 continue;
               }
-              results.push($(`input[name=${key}]`).val(value));
+              $(`input[name=${key}]`).val(value);
             }
-            return results;
+            return typeof success === "function" ? success() : void 0;
+          },
+          error: function(err) {
+            return typeof error === "function" ? error() : void 0;
           }
         });
       }
@@ -56,7 +58,7 @@
           },
           error: function(model, error) {
             var err, errors;
-            // console.log "erro", model, JSON.parse error.responseText					
+            // console.log "erro", model, JSON.parse error.responseText          
             if (!error.responseText) {
               return;
             }
@@ -77,7 +79,7 @@
     // MsgHelper.mostraMensagem "Erro de conexão com o servidor.", MsgType.erro  if error.statusText and error.statusText is "error"
 
     // that.model.clear({
-    // 	silent: true
+    //   silent: true
     // });
     return BindModelForm;
   });
