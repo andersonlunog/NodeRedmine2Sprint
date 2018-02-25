@@ -61,6 +61,7 @@ define (require, exports, module) ->
       __unbindingSubViews view
       view.off()
       view.stopListening()
+      view.undelegateEvents()
       view.clean?()
       view.$el.empty()
       app.views[view.name] = undefined

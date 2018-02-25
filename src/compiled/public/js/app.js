@@ -72,6 +72,7 @@
         __unbindingSubViews(view);
         view.off();
         view.stopListening();
+        view.undelegateEvents();
         if (typeof view.clean === "function") {
           view.clean();
         }
