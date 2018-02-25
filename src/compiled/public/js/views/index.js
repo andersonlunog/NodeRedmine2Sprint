@@ -8,9 +8,9 @@
     require("bootstrap");
     MainView = (function() {
       class MainView extends Backbone.View {
-        initialize(options) {
+        initialize(options = {}) {
           this.render();
-          this.menuView = app.createView("menu.principal", require("views/MenuView"), {
+          this.menuView = app.createSubView(this, "menu.principal", require("views/MenuView"), {
             activeMenu: options.activeMenu
           });
           this.menuView.render();

@@ -9,9 +9,9 @@ define (require, exports, module) ->
   class MainView extends Backbone.View
     el: "#main"
 
-    initialize: (options) ->
+    initialize: (options = {}) ->
       @render()
-      @menuView = app.createView "menu.principal", require("views/MenuView"), activeMenu: options.activeMenu
+      @menuView = app.createSubView @, "menu.principal", require("views/MenuView"), activeMenu: options.activeMenu
       @menuView.render()
       @
       

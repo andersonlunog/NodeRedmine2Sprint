@@ -7,6 +7,7 @@ define (require, exports, module) ->
 
   app = {}
   app.views = {}
+  app.currentView = null
   app.root = "/"
   # app.post = ServiceUtil.post
 
@@ -14,9 +15,9 @@ define (require, exports, module) ->
   
   app.createMainView = (activeMenu, forceRecreate) -> 
     if not app.views["index"] or forceRecreate
-      __createView "index", require("views/index"), activeMenu: activeMenu
+      __createIndexView()
     else
-      app.views["index"].menuView.setActiveMenu(activeMenu)
+      app.indexView.menuView.setActiveMenu(activeMenu)
 
   Backbone.Events.on "view:sprintLista", -> 
     app.createView("sprintLista", require("views/sprintListaView"))
@@ -30,21 +31,48 @@ define (require, exports, module) ->
   # app.createCalculoView = (id)-> createView "calculo.calculo", require("views/calculo/CalculoView"), calculoID: id
   
   createView = (name, View, options = {}) ->
-    if not app.loaded
-      app.loaded = true
-      __createView "index", require("views/index"), activeMenu: "home"
-    __createView name, View, options
+    __createIndexView()
+    __unbindingView app.currentView if app.currentView?
+    view = __createView name, View, options
+    app.currentView = view
+
+  createSubView = (view, name, SubView, options = {}) ->
+    view.subViews = {} unless view.subViews?
+    vName = "#{view.name}.#{name}"
+    subView = __createView vName, SubView, options
+    view.subViews[vName] = subView
+
+  __createIndexView = ()->
+    unless app.indexView?
+      View = require("views/index")
+      view = new View
+      app.indexView = view
 
   __createView = (name, View, options = {}) ->
     view = app.views[name]
+    __unbindingView view
+    view = new View options
+    view.name = name
+    app.views[name] = view
+    view
+
+  __unbindingView = (view)->
     if view?
+      __unbindingSubViews view
       view.off()
       view.stopListening()
       view.clean?()
-    view = new View options
-    app.views[name] = view
+      view.$el.empty()
+      app.views[view.name] = undefined
+
+  __unbindingSubViews = (view) ->
+    return if _.isEmpty view.subViews
+    for name, subView of view.subViews
+      __unbindingView subView
+    
 
   app.createView = createView
+  app.createSubView = createSubView
 
   window.app = app  
   module.exports = app
