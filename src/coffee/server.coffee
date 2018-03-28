@@ -15,7 +15,8 @@ environment = require('./server/config/environment')()
 app.use express.static "#{__dirname}/public"
 
 # configuration ===============================================================
-mongoose.connect environment.database.uri
+mongoose.connect environment.database.uri, null, (err)->
+  console.log 
 # connect to our database
 require('./server/business/passport') passport
 # pass passport for configuration

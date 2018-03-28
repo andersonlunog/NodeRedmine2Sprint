@@ -22,7 +22,7 @@
           req = https.request({
             host: environment.redmine.host,
             port: 443,
-            path: `/issues/${issue}.json`,
+            path: `/issues.json?issue_id=${issue}`,
             method: "GET",
             headers: {
               "Content-Type": "application/json",

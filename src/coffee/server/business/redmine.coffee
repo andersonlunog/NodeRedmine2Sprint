@@ -9,14 +9,13 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 module.exports = () ->
 
   getIssue: (issue, dtInicial, dtFinal) ->
-
     new Promise (resolve, reject) =>
         console.log "Fazendo a requisição da issue #{issue}..."
         auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
         req = https.request
           host: environment.redmine.host
           port: 443
-          path: "/issues/#{issue}.json"
+          path: "/issues.json?issue_id=#{issue}"
           method: "GET"
           headers: 
             "Content-Type": "application/json"
