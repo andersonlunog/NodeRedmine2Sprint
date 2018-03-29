@@ -29,8 +29,11 @@
   app.use(express.static(`${__dirname}/public`));
 
   // configuration ===============================================================
-  mongoose.connect(environment.database.uri);
+  mongoose.connect(environment.database.uri, null, function(err) {
+    return console.log(err);
+  });
 
+  
   // connect to our database
   require('./server/business/passport')(passport);
 

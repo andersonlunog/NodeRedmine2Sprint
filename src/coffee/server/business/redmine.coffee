@@ -28,10 +28,14 @@ module.exports = () ->
 
           res.on "data", (d) =>        
             obj = JSON.parse d
-            console.log "Encontrou #{obj.issue.id}"
-            @getTimeEntries(issue, dtInicial, dtFinal).then (times) ->
-              obj.time_entries = times.time_entries
-              resolve obj
+            if obj.total_count is 0
+              console.log "Não encontrou #{issue}"
+            else
+              obj = issue: obj.issues[0]
+              console.log "Encontrou #{obj.issue.id}"
+              @getTimeEntries(issue, dtInicial, dtFinal).then (times) ->
+                obj.time_entries = times.time_entries
+                resolve obj
 
           res.on "end", =>
             console.log "Acabou"

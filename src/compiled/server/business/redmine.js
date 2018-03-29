@@ -39,11 +39,18 @@
             res.on("data", (d) => {
               var obj;
               obj = JSON.parse(d);
-              console.log(`Encontrou ${obj.issue.id}`);
-              return this.getTimeEntries(issue, dtInicial, dtFinal).then(function(times) {
-                obj.time_entries = times.time_entries;
-                return resolve(obj);
-              });
+              if (obj.total_count === 0) {
+                return console.log(`Não encontrou ${issue}`);
+              } else {
+                obj = {
+                  issue: obj.issues[0]
+                };
+                console.log(`Encontrou ${obj.issue.id}`);
+                return this.getTimeEntries(issue, dtInicial, dtFinal).then(function(times) {
+                  obj.time_entries = times.time_entries;
+                  return resolve(obj);
+                });
+              }
             });
             return res.on("end", () => {
               return console.log("Acabou");
