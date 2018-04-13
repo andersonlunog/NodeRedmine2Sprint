@@ -10,7 +10,7 @@
   // DateUtils = require "../utils/date"
   // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
   module.exports = function(app) {
-    app.get("/usuarioDoRedmine", function(req, res) {
+    app.get("/buscarRedmine", function(req, res) {
       var id;
       id = req.query.id;
       return redmine.getUser(id).then(function(user) {

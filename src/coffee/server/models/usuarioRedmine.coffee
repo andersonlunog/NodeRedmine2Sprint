@@ -4,6 +4,7 @@ Schema = mongoose.Schema
 usuarioRedmineSchema = new Schema
   redmineID: Number
   nome: String
+  ativo: Boolean
 
 module.exports = mongoose.model('UsuarioRedmine', usuarioRedmineSchema)
 

@@ -7,7 +7,8 @@
 
   usuarioRedmineSchema = new Schema({
     redmineID: Number,
-    nome: String
+    nome: String,
+    ativo: Boolean
   });
 
   module.exports = mongoose.model('UsuarioRedmine', usuarioRedmineSchema);

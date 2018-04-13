@@ -1,0 +1,46 @@
+<div class="container">
+  <h2>Definir Equipe</h2>
+  <hr>
+  <form id="frm-usuarios">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>ID</th>
+          <th>Nome</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%_.each(usuarios, function(usuario) { %>
+        <tr>
+          <td><input type="checkbox" class="chk-usuario" name="<%= usuario.id %>" <%= usuario.attributes.ativo ? "checked" : "" %>></td>
+          <td><%= usuario.attributes.redmineID %></td>
+          <td><%= usuario.attributes.nome %></td>
+          <td></td>
+        </tr>
+        <%})%>
+      </tbody>    
+    </table>
+    <button class="btn btn-primary" type="submit" id="btn-salvar">Salvar</button>
+  </form>
+  <hr>  
+  <h4>Buscar do redmine</h4>
+  <hr>
+  <form id="frm-filtro">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="control-label" for="input-inicio">ID inicial</label>
+          <input type="number" class="form-control" id="input-inicio" name="inicio" placeholder="Início" value="<%= inicio %>">
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="control-label" for="input-fim">ID final</label>
+          <input type="number" class="form-control" id="input-fim" name="fim" placeholder="Fim" value="<%= fim %>">
+        </div>
+      </div>
+    </div>
+    <button id="btn-buscar" type="submit" class="btn btn-primary">Buscar</button>
+  </form>
+</div>

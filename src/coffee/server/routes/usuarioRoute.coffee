@@ -7,7 +7,7 @@ UsuarioRedmine = require('../models/usuarioRedmine')
 # process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 module.exports = (app) ->
-  app.get "/usuarioDoRedmine", (req, res) ->
+  app.get "/buscarRedmine", (req, res) ->
     id = req.query.id
     redmine.getUser(id).then (user) ->
       res.send user
