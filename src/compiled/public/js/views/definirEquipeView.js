@@ -85,7 +85,8 @@
           if (chk[0] === target[0]) {
             return;
           }
-          return chk.prop("checked", !chk.is(":checked"));
+          chk.prop("checked", !chk.is(":checked"));
+          return chk.trigger("change");
         }
 
         chkAtivoChanged(ev) {

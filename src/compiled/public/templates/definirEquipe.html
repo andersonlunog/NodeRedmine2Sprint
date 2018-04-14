@@ -13,7 +13,7 @@
       <tbody>
         <%_.each(usuarios, function(usuario) { %>
         <tr>
-          <td><input type="checkbox" class="chk-usuario" name="<%= usuario.id %>" <%= usuario.attributes.ativo ? "checked" : "" %>></td>
+          <td><input type="checkbox" class="chk-usuario" name="<%= usuario.cid %>" <%= usuario.attributes.ativo ? "checked" : "" %>></td>
           <td><%= usuario.attributes.redmineID %></td>
           <td><%= usuario.attributes.nome %></td>
           <td></td>

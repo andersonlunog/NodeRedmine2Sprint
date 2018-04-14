@@ -26,7 +26,7 @@
         </tr>
       </thead>
       <tbody>
-        <%_.each(usuarios, function(usuario) { %>
+        <% _.each(usuarios, function(usuario) { %>
         <tr>
           <td><input type="checkbox" name="usuarioID" value="<%= usuario._id %>"></td>
           <td><%= usuario.nome %></td>

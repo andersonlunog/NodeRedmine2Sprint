@@ -21,7 +21,9 @@
       });
     });
     app.get("/usuariosRedmine", function(req, res) {
-      return UsuarioRedmine.find({}, function(err, users) {
+      var filtro;
+      filtro = req.query;
+      return UsuarioRedmine.find(filtro, function(err, users) {
         if (err) {
           return res.status(400).send(err);
         }
@@ -51,7 +53,8 @@
             return returnIfLast(i);
           } else {
             if (usr) {
-              return usr.save(usuario).then(function(usr1) {
+              usr.set(usuario);
+              return usr.save().then(function(usr1) {
                 ret.usuariosAtualizados.push(usr1);
                 console.log(`Atualizado usuario ${usuario.nome}`);
                 return returnIfLast(i);

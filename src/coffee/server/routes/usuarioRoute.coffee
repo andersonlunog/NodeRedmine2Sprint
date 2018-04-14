@@ -16,7 +16,8 @@ module.exports = (app) ->
       res.status(404).send "Usuário #{id} não encontrado"
 
   app.get "/usuariosRedmine", (req, res) ->
-    UsuarioRedmine.find {}, (err, users) ->
+    filtro = req.query
+    UsuarioRedmine.find filtro, (err, users) ->
       return res.status(400).send(err) if err
       res.send users
   
@@ -39,7 +40,8 @@ module.exports = (app) ->
           returnIfLast i
         else
           if usr
-            usr.save(usuario).then (usr1)->
+            usr.set usuario
+            usr.save().then (usr1)->
               ret.usuariosAtualizados.push usr1
               console.log "Atualizado usuario #{usuario.nome}"
               returnIfLast i

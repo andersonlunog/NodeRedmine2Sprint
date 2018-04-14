@@ -18,7 +18,7 @@
             nome: "",
             inicio: "",
             fim: "",
-            chamadosTxt: "12789 12741 12740 12577",
+            chamadosTxt: "15087 13791 15386 15426",
             buscando: false,
             chamados: []
           });
@@ -28,6 +28,9 @@
           this.chamadosBuscaCollection.on("add remove", this.render, this);
           this.render();
           this.usuarioRedmineCollection.fetch({
+            data: {
+              ativo: true
+            },
             success: (collection, response) => {
               if (this.options.id) {
                 this.model.set({

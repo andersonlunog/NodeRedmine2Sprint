@@ -24,7 +24,7 @@ define (require, exports, module) ->
         nome: ""
         inicio: ""
         fim: ""
-        chamadosTxt: "12789 12741 12740 12577"
+        chamadosTxt: "15087 13791 15386 15426"
         buscando: false
         chamados: []
       @model.on "change", @render, @
@@ -33,6 +33,8 @@ define (require, exports, module) ->
       @chamadosBuscaCollection.on "add remove", @render, @
       @render()      
       @usuarioRedmineCollection.fetch
+        data: 
+          ativo: true
         success: (collection, response) =>
           if @options.id
             @model.set "_id": @options.id

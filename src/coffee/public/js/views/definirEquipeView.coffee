@@ -78,6 +78,7 @@ define (require, exports, module) ->
       chk = target.closest("tr").find("input:checkbox")
       return if chk[0] is target[0]
       chk.prop("checked", !chk.is(":checked"))
+      chk.trigger "change"
 
     chkAtivoChanged: (ev)->
       chk = @$(ev.target)
