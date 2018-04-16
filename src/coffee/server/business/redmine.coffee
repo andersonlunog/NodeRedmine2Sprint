@@ -15,7 +15,7 @@ module.exports = () ->
         req = https.request
           host: environment.redmine.host
           port: 443
-          path: "/issues.json?issue_id=#{issue}"
+          path: "/issues.json?status_id=*&issue_id=#{issue}"
           method: "GET"
           headers: 
             "Content-Type": "application/json"

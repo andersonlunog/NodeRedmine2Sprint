@@ -59,6 +59,19 @@
     //   res.render 'redmine.ejs', {issues: [data.issue], issuesList: issuesList}
     // , (err) ->
     //   res.render 'redmine.ejs', message: err  
+    app.get("/sprint/:id", function(req, res) {
+      return SprintModel.find({
+        _id: req.params.id
+      }, function(err, sprint) {
+        if (err) {
+          return res.status(400).send(err);
+        }
+        if (!sprint.length) {
+          return res.send(null);
+        }
+        return res.send(sprint[0]);
+      });
+    });
     app.post("/sprint", function(req, res) {
       var newSprint, sprint;
       sprint = req.body;

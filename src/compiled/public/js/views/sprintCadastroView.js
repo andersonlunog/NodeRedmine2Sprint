@@ -18,9 +18,10 @@
             nome: "",
             inicio: "",
             fim: "",
-            chamadosTxt: "15087 13791 15386 15426",
+            chamadosPlanejadosTxt: "15527 15554 15555 15556 15557",
             buscando: false,
-            chamados: []
+            chamadosPlanejados: [],
+            chamadosNaoPlanejados: []
           });
           this.model.on("change", this.render, this);
           this.usuarioRedmineCollection = new UsuarioRedmineCollection;
@@ -32,17 +33,30 @@
               ativo: true
             },
             success: (collection, response) => {
-              if (this.options.id) {
+              if (this.options.sprintID) {
                 this.model.set({
-                  "_id": this.options.id
+                  "_id": this.options.sprintID
                 });
                 return this.model.fetch({
+                  success: (sprint) => {
+                    this.usuarioRedmineCollection.forEach(function(mdl) {
+                      if (_.some(sprint.get("usuarios"), function(rID) {
+                        return mdl.get("redmineID");
+                      })) {
+                        return mdl.set("ativoSprint", true);
+                      }
+                    });
+                    return this.render();
+                  },
                   error: function(e) {
                     console.log(e);
                     return alert("Houve um erro ao buscar a sprint!/r/nConsulte o log.");
                   }
                 });
               } else {
+                this.usuarioRedmineCollection.forEach(function(mdl) {
+                  return mdl.set("ativoSprint", true);
+                });
                 return this.render();
               }
             },
@@ -59,29 +73,29 @@
           that = this;
           modelObj = this.model.toJSON();
           modelObj.usuarios = this.usuarioRedmineCollection.toJSON();
-          modelObj.chamados = this.chamadosBuscaCollection.toJSON();
+          modelObj.chamadosPlanejados = this.chamadosBuscaCollection.toJSON();
           $(this.el).html(this.template(modelObj));
           helper.aguardeBtn.call(this, "#btn-buscar", "Buscar", "Buscando...", !this.buscando);
           return this;
         }
 
         buscarIssues(ev) {
-          var chamadosTxt, fim, inicio, issuesArr, nome;
+          var chamadosPlanejadosTxt, fim, inicio, issuesArr, nome;
           ev.preventDefault();
           helper.aguardeBtn.call(this, "#btn-buscar", "Buscar", "Buscando...", false);
           this.buscando = true;
           this.chamadosBuscaCollection.reset();
-          chamadosTxt = this.$("#txt-chamados").val();
+          chamadosPlanejadosTxt = this.$("#txt-chamados").val();
           nome = this.$("#input-nome").val();
           inicio = this.$("#input-inicio").val();
           fim = this.$("#input-fim").val();
           this.model.set({
             nome: nome,
-            chamadosTxt: chamadosTxt,
+            chamadosPlanejadosTxt: chamadosPlanejadosTxt,
             inicio: inicio,
             fim: fim
           });
-          issuesArr = _.reject(chamadosTxt.split(/[^\d]/), function(iss) {
+          issuesArr = _.reject(chamadosPlanejadosTxt.split(/[^\d]/), function(iss) {
             return !iss;
           });
           if (_.isEmpty(issuesArr)) {
@@ -107,7 +121,7 @@
         }
 
         submit(ev) {
-          var chamados, chamadosChk, usuarios, usuariosChk;
+          var chamadosPlanejadosTxt, fim, inicio, nome, usuarios, usuariosChk;
           ev.preventDefault();
           usuariosChk = this.$("#frm-sprint #tbl-usuarios input:checked");
           if (!usuariosChk.length) {
@@ -115,21 +129,27 @@
             alert("Nenhum usuário selecionado.");
             return;
           }
-          chamadosChk = this.$("#frm-sprint #tbl-chamados input:checked");
-          if (!chamadosChk.length) {
-            helper.aguardeBtn.call(this, "#btn-salvar", "Salvar", "Salvando...", true);
-            alert("Nenhum chamado selecionado.");
-            return;
-          }
+          // chamadosChk = @$ "#frm-sprint #tbl-chamados input:checked"
+          // unless chamadosChk.length
+          //   helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvando...", true
+          //   alert "Nenhum chamado selecionado."
+          //   return
           usuarios = _.map(usuariosChk, (el) => {
             return this.usuarioRedmineCollection.get($(el).val()).toJSON();
           });
-          chamados = _.map(chamadosChk, (el) => {
-            return this.chamadosBuscaCollection.get(parseInt($(el).val())).toJSON();
-          });
+          // chamadosPlanejados = _.map chamadosChk, (el)=> @chamadosBuscaCollection.get(parseInt($(el).val())).toJSON()
+          chamadosPlanejadosTxt = this.$("#txt-chamados").val();
+          nome = this.$("#input-nome").val();
+          inicio = this.$("#input-inicio").val();
+          fim = this.$("#input-fim").val();
           this.model.set({
-            usuarios: usuarios,
-            chamados: chamados
+            usuarios: _.pluck(usuarios, "redmineID"),
+            nome: nome,
+            chamadosPlanejadosTxt: chamadosPlanejadosTxt,
+            // chamadosPlanejados: chamadosPlanejados
+            chamadosPlanejados: [],
+            inicio: inicio,
+            fim: fim
           });
           this.model.save(null, {
             success: function(mdl) {

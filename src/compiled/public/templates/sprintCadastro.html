@@ -28,7 +28,7 @@
       <tbody>
         <% _.each(usuarios, function(usuario) { %>
         <tr>
-          <td><input type="checkbox" name="usuarioID" value="<%= usuario._id %>"></td>
+          <td><input type="checkbox" name="usuarioID" value="<%= usuario._id %>" <%= usuario.ativoSprint ? "checked" : "" %>></td>
           <td><%= usuario.nome %></td>
           <td></td>
         </tr>
@@ -37,8 +37,8 @@
     </table>
 
     <div class="form-group">
-      <label class="control-label" for="txt-chamados">Chamados</label>
-      <textarea class="form-control" id="txt-chamados" name="chamadosTxt"><%= chamadosTxt %></textarea>
+      <label class="control-label" for="txt-chamados">Chamados planejados</label>
+      <textarea class="form-control" id="txt-chamados" name="chamadosTxt"><%= chamadosPlanejadosTxt %></textarea>
     </div>
     <button id="btn-buscar" type="submit" class="btn btn-primary">Buscar</button>
 
@@ -57,7 +57,7 @@
           </tr>
         </thead>
         <tbody>
-          <% chamados.forEach(function(obj){ 
+          <% chamadosPlanejados.forEach(function(obj){ 
             var issue = obj.issue;
             if (!issue)
               return;

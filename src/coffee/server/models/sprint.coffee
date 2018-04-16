@@ -6,7 +6,8 @@ sprintSchema = new Schema
   inicio: String
   fim: String
   usuarios: Array
-  chamadosTxt: String
-  chamados: Array
+  chamadosPlanejadosTxt: String
+  chamadosPlanejados: Array
+  chamadosNaoPlanejados: Array
 
 module.exports = mongoose.model('Sprint', sprintSchema)

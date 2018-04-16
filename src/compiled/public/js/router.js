@@ -15,11 +15,11 @@
         "sprint": function() {
           return Backbone.Events.trigger("view:sprintCadastro");
         },
+        "sprint/:id": function(id) {
+          return Backbone.Events.trigger("view:sprintCadastro", id);
+        },
         "definir-equipe": function() {
           return Backbone.Events.trigger("view:definirEquipe");
-        },
-        "sprints/:id": function() {
-          return Backbone.Events.trigger("view:sprintCadastro", id);
         }
       };
 

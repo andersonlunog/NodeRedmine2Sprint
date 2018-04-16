@@ -46,6 +46,12 @@ module.exports = (app) ->
     #   res.render 'redmine.ejs', {issues: [data.issue], issuesList: issuesList}
     # , (err) ->
     #   res.render 'redmine.ejs', message: err  
+  
+  app.get "/sprint/:id", (req, res) ->
+    SprintModel.find {_id: req.params.id}, (err, sprint) ->
+      return res.status(400).send(err) if err
+      return res.send(null) unless sprint.length
+      res.send sprint[0]
 
   app.post "/sprint", (req, res) ->
     sprint = req.body

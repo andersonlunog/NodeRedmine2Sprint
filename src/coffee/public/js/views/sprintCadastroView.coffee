@@ -24,9 +24,10 @@ define (require, exports, module) ->
         nome: ""
         inicio: ""
         fim: ""
-        chamadosTxt: "15087 13791 15386 15426"
+        chamadosPlanejadosTxt: "15527 15554 15555 15556 15557"
         buscando: false
-        chamados: []
+        chamadosPlanejados: []
+        chamadosNaoPlanejados: []
       @model.on "change", @render, @
       @usuarioRedmineCollection = new UsuarioRedmineCollection
       @chamadosBuscaCollection = new Backbone.Collection
@@ -36,13 +37,19 @@ define (require, exports, module) ->
         data: 
           ativo: true
         success: (collection, response) =>
-          if @options.id
-            @model.set "_id": @options.id
+          if @options.sprintID
+            @model.set "_id": @options.sprintID
             @model.fetch
+              success: (sprint) =>
+                @usuarioRedmineCollection.forEach (mdl)->
+                  mdl.set("ativoSprint", true) if _.some sprint.get("usuarios"), (rID)-> mdl.get("redmineID")
+                @render()
               error: (e)->
                 console.log e
                 alert "Houve um erro ao buscar a sprint!/r/nConsulte o log."
           else
+            @usuarioRedmineCollection.forEach (mdl)->
+              mdl.set "ativoSprint", true
             @render()
         error: (e) ->
           console.log e
@@ -53,7 +60,7 @@ define (require, exports, module) ->
       that = this
       modelObj = @model.toJSON()
       modelObj.usuarios = @usuarioRedmineCollection.toJSON()
-      modelObj.chamados = @chamadosBuscaCollection.toJSON()
+      modelObj.chamadosPlanejados = @chamadosBuscaCollection.toJSON()
       $(@el).html @template modelObj
 
       helper.aguardeBtn.call @, "#btn-buscar", "Buscar", "Buscando...", !@buscando
@@ -65,17 +72,17 @@ define (require, exports, module) ->
       @buscando = true
       @chamadosBuscaCollection.reset()
 
-      chamadosTxt = @$("#txt-chamados").val()
+      chamadosPlanejadosTxt = @$("#txt-chamados").val()
       nome = @$("#input-nome").val()
       inicio = @$("#input-inicio").val()
       fim = @$("#input-fim").val()
 
       @model.set
         nome: nome
-        chamadosTxt: chamadosTxt
+        chamadosPlanejadosTxt: chamadosPlanejadosTxt
         inicio: inicio
         fim: fim
-      issuesArr = _.reject chamadosTxt.split(/[^\d]/), (iss)-> not iss
+      issuesArr = _.reject chamadosPlanejadosTxt.split(/[^\d]/), (iss)-> not iss
 
       return alert "O campo chamados não pode estar vazio!" if _.isEmpty issuesArr
 
@@ -102,18 +109,27 @@ define (require, exports, module) ->
         alert "Nenhum usuário selecionado."
         return
 
-      chamadosChk = @$ "#frm-sprint #tbl-chamados input:checked"
-      unless chamadosChk.length
-        helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvando...", true
-        alert "Nenhum chamado selecionado."
-        return
+      # chamadosChk = @$ "#frm-sprint #tbl-chamados input:checked"
+      # unless chamadosChk.length
+      #   helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvando...", true
+      #   alert "Nenhum chamado selecionado."
+      #   return
 
       usuarios = _.map usuariosChk, (el)=> @usuarioRedmineCollection.get($(el).val()).toJSON()
-      chamados = _.map chamadosChk, (el)=> @chamadosBuscaCollection.get(parseInt($(el).val())).toJSON()
+      # chamadosPlanejados = _.map chamadosChk, (el)=> @chamadosBuscaCollection.get(parseInt($(el).val())).toJSON()
+      chamadosPlanejadosTxt = @$("#txt-chamados").val()
+      nome = @$("#input-nome").val()
+      inicio = @$("#input-inicio").val()
+      fim = @$("#input-fim").val()
 
       @model.set
-        usuarios: usuarios
-        chamados: chamados
+        usuarios: _.pluck usuarios, "redmineID"
+        nome: nome
+        chamadosPlanejadosTxt: chamadosPlanejadosTxt
+        # chamadosPlanejados: chamadosPlanejados
+        chamadosPlanejados: []
+        inicio: inicio
+        fim: fim
 
       @model.save null,
         success: (mdl)->
