@@ -8,7 +8,17 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 module.exports = () ->
 
-  getIssue: (issue, dtInicial, dtFinal) ->
+  getIssueTimeEntries: (issue, dtInicial, dtFinal) ->
+    @getIssue issue, (issueObj, promiseRes)=>
+      timeOptions = 
+        issue: issue
+        dtInicial: dtInicial
+        dtFinal: dtFinal
+      @getTimeEntries(timeOptions).then (times) ->
+        issueObj.time_entries = times.time_entries
+        promiseRes issueObj
+
+  getIssue: (issue, callback) ->
     new Promise (resolve, reject) =>
         console.log "Fazendo a requisição da issue #{issue}..."
         auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
@@ -26,55 +36,8 @@ module.exports = () ->
             console.log "statusCode para issue #{issue}: #{res.statusCode}"
             reject statusCode: res.statusCode
 
-          res.on "data", (d) =>        
-            obj = JSON.parse d
-            if obj.total_count is 0
-              console.log "Não encontrou #{issue}"
-            else
-              obj = issue: obj.issues[0]
-              console.log "Encontrou #{obj.issue.id}"
-              @getTimeEntries(issue, dtInicial, dtFinal).then (times) ->
-                obj.time_entries = times.time_entries
-                resolve obj
-
-          res.on "end", =>
-            console.log "Acabou"
-
-
-        req.on "error", (e) =>
-          console.error "Ocorreu um erro ", e
-          reject e
-
-        req.end()
-
-  getTimeEntries: (issue, dtInicial, dtFinal) ->
-    dateFilter = ""
-    if dtInicial and dtFinal
-      try
-        dtIni = DateUtils.getDateToFilter dtInicial
-        dtFim = DateUtils.getDateToFilter dtFinal
-        dateFilter = "&spent_on=><#{dtIni}|#{dtFim}"
-      catch e
-        console.log "Não foi possível converter em data \"#{dtInicial}\" e/ou \"#{dtFinal}\"."
-
-    new Promise (resolve, reject) ->
-        console.log "Fazendo a requisição de tempo da issue #{issue}..."
-        auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
-        req = https.request
-          host: environment.redmine.host
-          port: 443
-          path: "/time_entries.json?issue_id=#{issue}#{dateFilter}"
-          method: "GET"
-          headers: 
-            "Content-Type": "application/json"
-            "Authorization": auth
-        , (res) ->
-          res.setEncoding "utf8"
-          if res.statusCode != 200
-            reject statusCode: res.statusCode
 
           buffer = ""
-
           res.on "data", (data) => 
             buffer += data
 
@@ -84,14 +47,88 @@ module.exports = () ->
                 obj = JSON.parse buffer
                 resolve obj
               catch e
-                resolve time_entries: {}
+                console.log "Erro ao converter o objeto #{buffer}"
+                console.log e
+                return resolve issue: {}
 
+            if obj.total_count is 0
+              console.log "Não encontrou #{issue}"
+            else
+              obj = issue: obj.issues[0]
+              console.log "Encontrou #{obj.issue.id}"
+              if callback?
+                callback obj, resolve
+              else
+                resolve obj
 
         req.on "error", (e) =>
           console.error "Ocorreu um erro ", e
           reject e
 
         req.end()
+
+  ###
+  opts:
+    issue
+    user
+    dtInicial
+    dtFinal
+    callback(timeEntriesObj, promiseResolve)
+  ###
+  getTimeEntries: (opts) ->
+    filters = []
+    filters.push "issue_id=#{opts.issue}" if opts.issue
+    filters.push "user_id=#{opts.user}" if opts.user
+    if opts.dtInicial and opts.dtFinal
+      try
+        dtIni = DateUtils.getDateToFilter opts.dtInicial
+        dtFim = DateUtils.getDateToFilter opts.dtFinal
+        filters.push "spent_on=><#{dtIni}|#{dtFim}"
+      catch e
+        console.log "Não foi possível converter em data \"#{opts.dtInicial}\" e/ou \"#{opts.dtFinal}\"."
+
+    new Promise (resolve, reject) ->
+      params = filters.join "&"
+      console.log "Fazendo a requisição de tempo com os parâmetros #{params}..."
+      auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
+      req = https.request
+        host: environment.redmine.host
+        port: 443
+        path: "/time_entries.json?#{params}"
+        method: "GET"
+        headers: 
+          "Content-Type": "application/json"
+          "Authorization": auth
+      , (res) ->
+        res.setEncoding "utf8"
+        if res.statusCode != 200
+          reject statusCode: res.statusCode
+
+        buffer = ""
+
+        res.on "data", (data) => 
+          buffer += data
+
+        res.on "end", =>
+          if buffer
+            try
+              obj = JSON.parse buffer
+              if opts.callback?
+                opts.callback obj, resolve
+              else
+                resolve obj
+            catch e
+              console.log "Erro ao converter o objeto #{buffer}"
+              console.log e
+              return resolve time_entries: {}
+          else
+            resolve time_entries: {}
+
+      req.on "error", (e) =>
+        console.error "Ocorreu um erro ", e
+        reject e
+
+      req.end()
 
   getUser: (id) ->
     new Promise (resolve, reject) ->
@@ -121,7 +158,9 @@ module.exports = () ->
                 obj = JSON.parse buffer
                 resolve obj
               catch e
-                resolve user: {}
+                console.log "Erro ao converter o objeto #{buffer}"
+                console.log e
+                return resolve user: {}
 
         req.on "error", (e) =>
           console.error "Ocorreu um erro ", e

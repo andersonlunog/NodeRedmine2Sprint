@@ -28,6 +28,11 @@
         sprintID: id
       });
     });
+    Backbone.Events.on("view:sprintResultado", function(id) {
+      return app.createView("sprintResultado", require("views/sprintResultadoView"), {
+        sprintID: id
+      });
+    });
     Backbone.Events.on("view:definirEquipe", function() {
       return app.createView("definirEquipe", require("views/definirEquipeView"));
     });

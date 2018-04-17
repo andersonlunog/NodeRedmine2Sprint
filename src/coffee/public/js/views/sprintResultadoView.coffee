@@ -3,13 +3,13 @@ define (require, exports, module) ->
   _ = require "underscore"
   $ = require "jquery"
   Backbone = require "backbone"
-  template = require "text!templates/sprintCadastro.html"
+  template = require "text!templates/sprintResultado.html"
   sprintModel = require "models/sprintModel"
   UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
   helper = require "helpers/helper"
   require "bootstrap"
 
-  class SprintCadastroView extends Backbone.View
+  class SprintResultadoView extends Backbone.View
     el: ".mid-container"
 
     template: _.template template
@@ -20,44 +20,106 @@ define (require, exports, module) ->
 
     initialize: (@options)->
       @model = new sprintModel
-        usuarios: []
-        nome: ""
-        inicio: ""
-        fim: ""
-        chamadosPlanejadosTxt: "15527 15554 15555 15556 15557"
-        buscando: false
-        chamadosPlanejados: []
-        chamadosNaoPlanejados: []
       @model.on "change", @render, @
       @usuarioRedmineCollection = new UsuarioRedmineCollection
+      @lancamentoHorasCollection = new Backbone.Collection
+      @chamadosCollection = new Backbone.Collection
       @chamadosBuscaCollection = new Backbone.Collection
       @chamadosBuscaCollection.on "add remove", @render, @
-      @render()      
-      @usuarioRedmineCollection.fetch
-        data: 
-          ativo: true
-        success: (collection, response) =>
-          if @options.sprintID
-            @model.set "_id": @options.sprintID
-            @model.fetch
-              success: (sprint) =>
-                @usuarioRedmineCollection.forEach (mdl)->
-                  mdl.set("ativoSprint", true) if _.some sprint.get("usuarios"), (rID)-> rID == mdl.get("redmineID")
-                @render()
-              error: (e)->
-                console.log e
-                alert "Houve um erro ao buscar a sprint!/r/nConsulte o log."
-          else
-            @usuarioRedmineCollection.forEach (mdl)->
-              mdl.set "ativoSprint", true
-            @render()
-        error: (e) ->
-          console.log e
-          alert "Houve um erro ao importar usuários!/r/nConsulte o log."
+      @render()
+      if @options.sprintID
+        @model.set "_id": @options.sprintID
+        @model.fetch
+          success: @getLancamentosHoras.bind(@)
+          error: (e)->
+            console.log e
+            alert "Houve um erro ao buscar a sprint!/r/nConsulte o log."
+      else
+        @usuarioRedmineCollection.forEach (mdl)->
+          mdl.set "ativoSprint", true
+        @render()
       @
+
+    getLancamentosHoras: (sprint)->
+      usuarios = sprint.get "usuarios"
+      inicio = sprint.get "inicio"
+      fim = sprint.get "fim"
+      usuarios.forEach (id, i, arr)=>
+        $.get "/timeentries?user=#{id}&inicio=#{inicio}&fim=#{fim}", (lancamento)=>
+          unless _.isEmpty(lancamento) or _.isEmpty(lancamento.time_entries)
+            lancamento.time_entries.forEach (time)=>
+              @getIssue time.issue.id, (issue)=>
+                time.issue = issue
+                console.log time
+                @processaLancamento time
+          else
+            console.log "Usuário #{id} sem lançamentos..."
+        .fail (e)=>
+          console.log e
+        # .always ()=>
+        #   if i >= usuarios.length - 1
+        #     @buscando = false
+        #     @render()
+
+    getIssue: (issueID, callback)->
+      mdl = @chamadosCollection.get issueID
+      return callback(mdl) if mdl
+      mdl = @chamadosCollection.add id: issueID
+
+      $.get "/redmine/issue?id=#{issueID}", (issue)=>
+        unless _.isEmpty(issue) or _.isEmpty(issue.issues)
+          mdl.set issue.issues[0]
+          callback mdl
+        else
+          console.log "Chamado #{issueID} não encontrado..."
+      .fail (e)=>
+        console.log e
+      # .always ()=>
+      #   if i >= issuesArr.length - 1
+      #     @buscando = false
+      #     @render()
+
+    processaLancamento: (lancamento)->
+      time = _.pick lancamento, "user", "hours", "spent_on"
+      issue = _.pick lancamento.issue, "id", "subject", "estimated_hours", "status"
+      issue.time_entries = time
+
+      lancamento.issue.custom_fields.forEach (field)->
+        switch field.id
+          when 19
+            issue.sistema = field.value
+          when 51
+            issue.grupo_cliente = field.value
+          when 52
+            issue.componente = field.value
+          when 53
+            issue.origem = field.value
+          when 58
+            issue.tipo_servico = field.value
+
+      ###
+      issue = 
+        id: 1
+        subject: ""
+        estimated_hours: 1
+        status:
+          {id: 27, name: "Aguardando Dev"}
+        custom_fields: [
+          {id: 19, name: "Sistema", value: "Interno"}
+          {id: 51, name: "Grupo Cliente", value: "Custom"}
+          {id: 52, name: "Componente", value: "Consolidado"}
+          {id: 53, name: "Origem", value: "Contrato"}
+          {id: 58, name: "Tipo do Serviço", value: "Correção"}
+        ]
+        time_entries:
+          hours: 7
+          spent_on: "2018-04-16"
+          user: {id: 43, name: "Eduardo Reis"}
+      ###
 
     render: ->
       modelObj = @model.toJSON()
+      modelObj.resultados = []
       modelObj.usuarios = @usuarioRedmineCollection.toJSON()
       modelObj.chamadosPlanejados = @chamadosBuscaCollection.toJSON()
       $(@el).html @template modelObj
@@ -86,7 +148,7 @@ define (require, exports, module) ->
       return alert "O campo chamados não pode estar vazio!" if _.isEmpty issuesArr
 
       issuesArr.forEach (id, i, arr)=>
-        $.get "/redmine/issuetime?id=#{id}", (issue)=>
+        $.get "/redmine/issue?id=#{id}", (issue)=>
           unless _.isEmpty(issue) or _.isEmpty(issue.issue)
             issue.id = issue.issue.id
             @chamadosBuscaCollection.add issue
@@ -140,4 +202,4 @@ define (require, exports, module) ->
 
       return
   
-  module.exports = SprintCadastroView
+  module.exports = SprintResultadoView

@@ -18,6 +18,9 @@
         "sprint/:id": function(id) {
           return Backbone.Events.trigger("view:sprintCadastro", id);
         },
+        "sprint/result/:id": function(id) {
+          return Backbone.Events.trigger("view:sprintResultado", id);
+        },
         "definir-equipe": function() {
           return Backbone.Events.trigger("view:definirEquipe");
         }

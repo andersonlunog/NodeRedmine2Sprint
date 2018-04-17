@@ -14,7 +14,21 @@
   // use this one for testing
   module.exports = function() {
     return {
-      getIssue: function(issue, dtInicial, dtFinal) {
+      getIssueTimeEntries: function(issue, dtInicial, dtFinal) {
+        return this.getIssue(issue, (issueObj, promiseRes) => {
+          var timeOptions;
+          timeOptions = {
+            issue: issue,
+            dtInicial: dtInicial,
+            dtFinal: dtFinal
+          };
+          return this.getTimeEntries(timeOptions).then(function(times) {
+            issueObj.time_entries = times.time_entries;
+            return promiseRes(issueObj);
+          });
+        });
+      },
+      getIssue: function(issue, callback) {
         return new Promise((resolve, reject) => {
           var auth, req;
           console.log(`Fazendo a requisição da issue ${issue}...`);
@@ -29,6 +43,7 @@
               "Authorization": auth
             }
           }, (res) => {
+            var buffer;
             res.setEncoding("utf8");
             if (res.statusCode !== 200) {
               console.log(`statusCode para issue ${issue}: ${res.statusCode}`);
@@ -36,9 +51,25 @@
                 statusCode: res.statusCode
               });
             }
-            res.on("data", (d) => {
-              var obj;
-              obj = JSON.parse(d);
+            buffer = "";
+            res.on("data", (data) => {
+              return buffer += data;
+            });
+            return res.on("end", () => {
+              var e, obj;
+              if (buffer) {
+                try {
+                  obj = JSON.parse(buffer);
+                  resolve(obj);
+                } catch (error) {
+                  e = error;
+                  console.log(`Erro ao converter o objeto ${buffer}`);
+                  console.log(e);
+                  return resolve({
+                    issue: {}
+                  });
+                }
+              }
               if (obj.total_count === 0) {
                 return console.log(`Não encontrou ${issue}`);
               } else {
@@ -46,14 +77,12 @@
                   issue: obj.issues[0]
                 };
                 console.log(`Encontrou ${obj.issue.id}`);
-                return this.getTimeEntries(issue, dtInicial, dtFinal).then(function(times) {
-                  obj.time_entries = times.time_entries;
+                if (callback != null) {
+                  return callback(obj, resolve);
+                } else {
                   return resolve(obj);
-                });
+                }
               }
-            });
-            return res.on("end", () => {
-              return console.log("Acabou");
             });
           });
           req.on("error", (e) => {
@@ -63,27 +92,42 @@
           return req.end();
         });
       },
-      getTimeEntries: function(issue, dtInicial, dtFinal) {
-        var dateFilter, dtFim, dtIni, e;
-        dateFilter = "";
-        if (dtInicial && dtFinal) {
+      /*
+      opts:
+        issue
+        user
+        dtInicial
+        dtFinal
+        callback(timeEntriesObj, promiseResolve)
+      */
+      getTimeEntries: function(opts) {
+        var dtFim, dtIni, e, filters;
+        filters = [];
+        if (opts.issue) {
+          filters.push(`issue_id=${opts.issue}`);
+        }
+        if (opts.user) {
+          filters.push(`user_id=${opts.user}`);
+        }
+        if (opts.dtInicial && opts.dtFinal) {
           try {
-            dtIni = DateUtils.getDateToFilter(dtInicial);
-            dtFim = DateUtils.getDateToFilter(dtFinal);
-            dateFilter = `&spent_on=><${dtIni}|${dtFim}`;
+            dtIni = DateUtils.getDateToFilter(opts.dtInicial);
+            dtFim = DateUtils.getDateToFilter(opts.dtFinal);
+            filters.push(`spent_on=><${dtIni}|${dtFim}`);
           } catch (error) {
             e = error;
-            console.log(`Não foi possível converter em data "${dtInicial}" e/ou "${dtFinal}".`);
+            console.log(`Não foi possível converter em data "${opts.dtInicial}" e/ou "${opts.dtFinal}".`);
           }
         }
         return new Promise(function(resolve, reject) {
-          var auth, req;
-          console.log(`Fazendo a requisição de tempo da issue ${issue}...`);
+          var auth, params, req;
+          params = filters.join("&");
+          console.log(`Fazendo a requisição de tempo com os parâmetros ${params}...`);
           auth = "Basic " + new Buffer(environment.redmine.user + ":" + environment.redmine.pass).toString("base64");
           req = https.request({
             host: environment.redmine.host,
             port: 443,
-            path: `/time_entries.json?issue_id=${issue}${dateFilter}`,
+            path: `/time_entries.json?${params}`,
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -106,13 +150,23 @@
               if (buffer) {
                 try {
                   obj = JSON.parse(buffer);
-                  return resolve(obj);
+                  if (opts.callback != null) {
+                    return opts.callback(obj, resolve);
+                  } else {
+                    return resolve(obj);
+                  }
                 } catch (error) {
                   e = error;
+                  console.log(`Erro ao converter o objeto ${buffer}`);
+                  console.log(e);
                   return resolve({
                     time_entries: {}
                   });
                 }
+              } else {
+                return resolve({
+                  time_entries: {}
+                });
               }
             });
           });
@@ -158,6 +212,8 @@
                   return resolve(obj);
                 } catch (error) {
                   e = error;
+                  console.log(`Erro ao converter o objeto ${buffer}`);
+                  console.log(e);
                   return resolve({
                     user: {}
                   });

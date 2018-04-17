@@ -21,10 +21,19 @@
         return res.send(sprints);
       });
     });
+    app.get('/redmine/issuetime', function(req, res) {
+      var params;
+      params = req.query;
+      return redmine.getIssueTimeEntries(params.id, params.inicio, params.fim).then(function(issue) {
+        return res.send(issue);
+      }, function(err) {
+        return res.status(400).send(err);
+      });
+    });
     app.get('/redmine/issue', function(req, res) {
       var params;
       params = req.query;
-      return redmine.getIssue(params.id, params.inicio, params.fim).then(function(issue) {
+      return redmine.getIssue(params.id).then(function(issue) {
         return res.send(issue);
       }, function(err) {
         return res.status(400).send(err);
@@ -47,7 +56,7 @@
         if (!issueID) {
           return;
         }
-        return promises.push(redmine.getIssue(issueID, ret.inicial, ret.final));
+        return promises.push(redmine.getIssueTimeEntries(issueID, ret.inicial, ret.final));
       });
       return Promise.all(promises).then(function(issues) {
         console.log("Resolveu as promessas..");
@@ -55,7 +64,7 @@
         return res.render('redmine.ejs', ret);
       });
     });
-    // redmine.getIssue issuesList, (data, status) ->
+    // redmine.getIssueTimeEntries issuesList, (data, status) ->
     //   res.render 'redmine.ejs', {issues: [data.issue], issuesList: issuesList}
     // , (err) ->
     //   res.render 'redmine.ejs', message: err  
@@ -85,6 +94,39 @@
         return res.send(newSprint);
       });
     });
+    app.get("/timeentries", function(req, res) {
+      var opts;
+      // SprintModel.find {_id: req.params.sprintID}, (err, sprints) ->
+      //   return res.status(400).send(err) if err
+      //   return res.send(null) unless sprints.length
+      //   sprint = sprints[0]
+
+      // promises = []
+      opts = {
+        user: req.query.user,
+        dtInicial: req.query.inicio,
+        dtFinal: req.query.fim
+      };
+      // callback: (timeEntriesObj, promiseResolve)->
+      //   issuePromisses = []
+      //   timeEntriesObj.time_entries.forEach (timeEntries) ->
+      //     issuePromisses.push redmine.getIssue(timeEntries.issue.id)
+      //   Promise.all(issuePromisses).then (issues)->
+      //     console.log "Resolveu as promessas issue.."
+      //     timeEntriesObj.time_entries.forEach (timeEntries, j) ->                
+      //       timeEntriesObj.time_entries[j].issue = issues[j];
+      //     promiseResolve(timeEntriesObj)
+
+      // promises.push redmine.getTimeEntries opts
+      return redmine.getTimeEntries(opts).then(function(timeEntries) {
+        console.log("Resolveu as promessas entries..");
+        return res.send(timeEntries);
+      });
+    });
   };
+
+  // Promise.all(promises).then (timeEntries) ->
+//   console.log "Resolveu as promessas entries.."
+//   res.send timeEntries
 
 }).call(this);

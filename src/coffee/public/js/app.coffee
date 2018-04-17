@@ -25,6 +25,9 @@ define (require, exports, module) ->
   Backbone.Events.on "view:sprintCadastro", (id) -> 
     app.createView("sprintCadastro", require("views/sprintCadastroView"), sprintID: id)
 
+  Backbone.Events.on "view:sprintResultado", (id) -> 
+    app.createView("sprintResultado", require("views/sprintResultadoView"), sprintID: id)
+
   Backbone.Events.on "view:definirEquipe", -> 
     app.createView("definirEquipe", require("views/definirEquipeView"))
 
