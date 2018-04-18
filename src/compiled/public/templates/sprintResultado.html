@@ -21,45 +21,58 @@
     
     <table class="table table-hover" id="tbl-chamados">
       <thead>
+        <!-- 
+        time = _.pick lancamento, "user", "hours", "spent_on"
+      issue = _.pick lancamento.issue, "id", "subject", "estimated_hours", "status", "assigned_to"
+      issue.time_entries = time
+
+      lancamento.issue.custom_fields.forEach (field)->
+        switch field.id
+          when 19
+            issue.sistema = field.value
+          when 51
+            issue.grupo_cliente = field.value
+          when 52
+            issue.componente = field.value
+          when 53
+            issue.origem = field.value
+          when 58
+            issue.tipo_servico = field.value
+          -->
           <tr>
-            <th>#</th>
             <th>ID</th>
             <th>Título</th>
             <th>Status</th>
             <th>Atribuído</th>
+            <th>Componente</th>
+            <th>Sistema</th>
+            <th>Grupo</th>
+            <th>Origem</th>
+            <th>Serviço</th>
             <th>Estimado</th>
-            <th>Hs. Total</th>
-            <th>Hs. interv</th>            
-            <th>Lançamentos Horas</th>            
+            <th>Hr lançada</th>
+            <th>Hr usuario</th>
+            <th>Dt lançamento</th>
           </tr>
         </thead>
         <tbody>
-          <% resultados.forEach(function(obj){ 
-            var issue = obj.issue;
-            if (!issue)
-              return;
-
-            var time_entries_sum = 0;
-            var time_entries_str = "";
-            if (obj.time_entries && obj.time_entries.length) {
-              obj.time_entries.forEach(function(time) { 
-                time_entries_sum += time.hours;
-                time_entries_str += time.user.name + " [" + time.hours + "][" + time.spent_on + "]\r\n";
-              }); 
-            }
-          %>
+          <% resultados.forEach(function(issue){ %>
           <tr>
-            <td><input type="checkbox" name="issueID" value="<%= issue.id %>"></td>
             <td>
               <a href="https://siacon.redmineup.com/issues/<%= issue.id%>" target="_blank">#<%= issue.id %></a>
             </td>
             <td><%= issue.subject %></td>
             <td><%= issue.status ? issue.status.name : "" %></td>
             <td><%= issue.assigned_to ? issue.assigned_to.name : "" %></td>
+            <td><%= issue.componente %></td>
+            <td><%= issue.sistema %></td>
+            <td><%= issue.grupo_cliente %></td>
+            <td><%= issue.origem %></td>
+            <td><%= issue.tipo_servico %></td>
             <td><%= issue.estimated_hours ? issue.estimated_hours.toLocaleString().replace(".", ",") : "" %></td>
-            <td><%= issue.spent_hours ? issue.spent_hours.toLocaleString().replace(".", ",") : "" %></td>
-            <td><%= time_entries_sum %></td>
-            <td style="white-space: pre-line;"><%= time_entries_str %></td>
+            <td><%= issue.time_entries.hours ? issue.time_entries.hours.toLocaleString().replace(".", ",") : "" %></td>
+            <td><%= issue.time_entries.user ? issue.time_entries.user.name : "" %></td>
+            <td><%= issue.time_entries.spent_on ? issue.time_entries.spent_on : "" %></td>
           </tr>
           <% }); %>
         </tbody>

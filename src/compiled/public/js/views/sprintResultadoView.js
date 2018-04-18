@@ -16,10 +16,11 @@
           this.model = new sprintModel;
           this.model.on("change", this.render, this);
           this.usuarioRedmineCollection = new UsuarioRedmineCollection;
-          this.lancamentoHorasCollection = new Backbone.Collection;
+          this.lancamentosCollection = new Backbone.Collection;
           this.chamadosCollection = new Backbone.Collection;
           this.chamadosBuscaCollection = new Backbone.Collection;
           this.chamadosBuscaCollection.on("add remove", this.render, this);
+          this.lancamentosCollection.on("add remove", this.render, this);
           this.render();
           if (this.options.sprintID) {
             this.model.set({
@@ -70,18 +71,9 @@
         //     @buscando = false
         //     @render()
         getIssue(issueID, callback) {
-          var mdl;
-          mdl = this.chamadosCollection.get(issueID);
-          if (mdl) {
-            return callback(mdl);
-          }
-          mdl = this.chamadosCollection.add({
-            id: issueID
-          });
           return $.get(`/redmine/issue?id=${issueID}`, (issue) => {
             if (!(_.isEmpty(issue) || _.isEmpty(issue.issues))) {
-              mdl.set(issue.issues[0]);
-              return callback(mdl);
+              return callback(issue.issues[0]);
             } else {
               return console.log(`Chamado ${issueID} não encontrado...`);
             }
@@ -90,16 +82,12 @@
           });
         }
 
-        // .always ()=>
-        //   if i >= issuesArr.length - 1
-        //     @buscando = false
-        //     @render()
         processaLancamento(lancamento) {
           var issue, time;
           time = _.pick(lancamento, "user", "hours", "spent_on");
-          issue = _.pick(lancamento.issue, "id", "subject", "estimated_hours", "status");
+          issue = _.pick(lancamento.issue, "id", "subject", "estimated_hours", "status", "assigned_to");
           issue.time_entries = time;
-          return lancamento.issue.custom_fields.forEach(function(field) {
+          lancamento.issue.custom_fields.forEach(function(field) {
             switch (field.id) {
               case 19:
                 return issue.sistema = field.value;
@@ -113,33 +101,13 @@
                 return issue.tipo_servico = field.value;
             }
           });
+          return this.lancamentosCollection.add(issue);
         }
 
-        /*
-        issue = 
-          id: 1
-          subject: ""
-          estimated_hours: 1
-          status:
-            {id: 27, name: "Aguardando Dev"}
-          custom_fields: [
-            {id: 19, name: "Sistema", value: "Interno"}
-            {id: 51, name: "Grupo Cliente", value: "Custom"}
-            {id: 52, name: "Componente", value: "Consolidado"}
-            {id: 53, name: "Origem", value: "Contrato"}
-            {id: 58, name: "Tipo do Serviço", value: "Correção"}
-          ]
-          time_entries:
-            hours: 7
-            spent_on: "2018-04-16"
-            user: {id: 43, name: "Eduardo Reis"}
-        */
         render() {
           var modelObj;
           modelObj = this.model.toJSON();
-          modelObj.resultados = [];
-          modelObj.usuarios = this.usuarioRedmineCollection.toJSON();
-          modelObj.chamadosPlanejados = this.chamadosBuscaCollection.toJSON();
+          modelObj.resultados = this.lancamentosCollection.toJSON();
           $(this.el).html(this.template(modelObj));
           helper.aguardeBtn.call(this, "#btn-buscar", "Buscar", "Buscando...", !this.buscando);
           return this;

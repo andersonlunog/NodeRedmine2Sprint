@@ -22,10 +22,11 @@ define (require, exports, module) ->
       @model = new sprintModel
       @model.on "change", @render, @
       @usuarioRedmineCollection = new UsuarioRedmineCollection
-      @lancamentoHorasCollection = new Backbone.Collection
+      @lancamentosCollection = new Backbone.Collection
       @chamadosCollection = new Backbone.Collection
       @chamadosBuscaCollection = new Backbone.Collection
       @chamadosBuscaCollection.on "add remove", @render, @
+      @lancamentosCollection.on "add remove", @render, @
       @render()
       if @options.sprintID
         @model.set "_id": @options.sprintID
@@ -62,26 +63,17 @@ define (require, exports, module) ->
         #     @render()
 
     getIssue: (issueID, callback)->
-      mdl = @chamadosCollection.get issueID
-      return callback(mdl) if mdl
-      mdl = @chamadosCollection.add id: issueID
-
       $.get "/redmine/issue?id=#{issueID}", (issue)=>
         unless _.isEmpty(issue) or _.isEmpty(issue.issues)
-          mdl.set issue.issues[0]
-          callback mdl
+          callback issue.issues[0]
         else
           console.log "Chamado #{issueID} não encontrado..."
       .fail (e)=>
         console.log e
-      # .always ()=>
-      #   if i >= issuesArr.length - 1
-      #     @buscando = false
-      #     @render()
 
     processaLancamento: (lancamento)->
       time = _.pick lancamento, "user", "hours", "spent_on"
-      issue = _.pick lancamento.issue, "id", "subject", "estimated_hours", "status"
+      issue = _.pick lancamento.issue, "id", "subject", "estimated_hours", "status", "assigned_to"
       issue.time_entries = time
 
       lancamento.issue.custom_fields.forEach (field)->
@@ -97,31 +89,11 @@ define (require, exports, module) ->
           when 58
             issue.tipo_servico = field.value
 
-      ###
-      issue = 
-        id: 1
-        subject: ""
-        estimated_hours: 1
-        status:
-          {id: 27, name: "Aguardando Dev"}
-        custom_fields: [
-          {id: 19, name: "Sistema", value: "Interno"}
-          {id: 51, name: "Grupo Cliente", value: "Custom"}
-          {id: 52, name: "Componente", value: "Consolidado"}
-          {id: 53, name: "Origem", value: "Contrato"}
-          {id: 58, name: "Tipo do Serviço", value: "Correção"}
-        ]
-        time_entries:
-          hours: 7
-          spent_on: "2018-04-16"
-          user: {id: 43, name: "Eduardo Reis"}
-      ###
+      @lancamentosCollection.add issue
 
     render: ->
       modelObj = @model.toJSON()
-      modelObj.resultados = []
-      modelObj.usuarios = @usuarioRedmineCollection.toJSON()
-      modelObj.chamadosPlanejados = @chamadosBuscaCollection.toJSON()
+      modelObj.resultados = @lancamentosCollection.toJSON()
       $(@el).html @template modelObj
 
       helper.aguardeBtn.call @, "#btn-buscar", "Buscar", "Buscando...", !@buscando
