@@ -5,6 +5,7 @@
       backbone: "../libs/backbone/backbone-min",
       bootstrap: "../libs/bootstrap/dist/js/bootstrap.min",
       underscore: "../libs/underscore/underscore-min",
+      chart: "../libs/chart.js/dist/Chart.min",
       text: "../libs/text/text",
       templates: "../templates",
       model: "models/baseModel",

@@ -1,12 +1,13 @@
 (function() {
   define(function(require, exports, module) {
-    var $, Backbone, SprintResultadoView, UsuarioRedmineCollection, _, helper, sprintModel, template;
+    var $, Backbone, Chart, SprintResultadoView, UsuarioRedmineCollection, _, helper, sprintModel, template;
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
     template = require("text!templates/sprintResultado.html");
     sprintModel = require("models/sprintModel");
     UsuarioRedmineCollection = require("models/usuarioRedmineCollection");
+    Chart = require("chart");
     helper = require("helpers/helper");
     require("bootstrap");
     SprintResultadoView = (function() {
@@ -17,9 +18,6 @@
           this.model.on("change", this.render, this);
           this.usuarioRedmineCollection = new UsuarioRedmineCollection;
           this.lancamentosCollection = new Backbone.Collection;
-          this.chamadosCollection = new Backbone.Collection;
-          this.chamadosBuscaCollection = new Backbone.Collection;
-          this.chamadosBuscaCollection.on("add remove", this.render, this);
           this.lancamentosCollection.on("add remove", this.render, this);
           this.render();
           if (this.options.sprintID) {
@@ -49,12 +47,19 @@
           fim = sprint.get("fim");
           return usuarios.forEach((id, i, arr) => {
             return $.get(`/timeentries?user=${id}&inicio=${inicio}&fim=${fim}`, (lancamento) => {
+              var buscandoIssue;
               if (!(_.isEmpty(lancamento) || _.isEmpty(lancamento.time_entries))) {
-                return lancamento.time_entries.forEach((time) => {
+                buscandoIssue = true;
+                return lancamento.time_entries.forEach((time, j) => {
                   return this.getIssue(time.issue.id, (issue) => {
                     time.issue = issue;
                     console.log(time);
-                    return this.processaLancamento(time);
+                    return this.lancamentosCollection.add(time);
+                  }, () => {
+                    if (j >= lancamento.time_entries.length - 1 && i >= usuarios.length - 1) {
+                      console.log(`Acabou... ${this.lancamentosCollection.length}`);
+                      return this.consolidaDados();
+                    }
                   });
                 });
               } else {
@@ -67,10 +72,9 @@
         }
 
         // .always ()=>
-        //   if i >= usuarios.length - 1
-        //     @buscando = false
+        //   buscandoLancamentos = false if i >= usuarios.length - 1
         //     @render()
-        getIssue(issueID, callback) {
+        getIssue(issueID, callback, alwaysCb) {
           return $.get(`/redmine/issue?id=${issueID}`, (issue) => {
             if (!(_.isEmpty(issue) || _.isEmpty(issue.issues))) {
               return callback(issue.issues[0]);
@@ -79,6 +83,8 @@
             }
           }).fail((e) => {
             return console.log(e);
+          }).always(() => {
+            return typeof alwaysCb === "function" ? alwaysCb() : void 0;
           });
         }
 
@@ -104,96 +110,93 @@
           return this.lancamentosCollection.add(issue);
         }
 
+        consolidaDados() {
+          var somaPorCustomFields;
+          this.horaOrigem = {};
+          this.horaGrupoCliente = {};
+          this.horaTipoServico = {};
+          somaPorCustomFields = function(dest, lancamento, customFieldID) {
+            var key;
+            key = _.findWhere(lancamento.get("issue").custom_fields, {
+              id: customFieldID
+            }).value;
+            if (dest[key]) {
+              return dest[key] += lancamento.get("hours");
+            } else {
+              return dest[key] = lancamento.get("hours");
+            }
+          };
+          return this.lancamentosCollection.forEach((lancamento) => {
+            somaPorCustomFields(this.horaOrigem, lancamento, 53);
+            somaPorCustomFields(this.horaGrupoCliente, lancamento, 51);
+            return somaPorCustomFields(this.horaTipoServico, lancamento, 58);
+          });
+        }
+
         render() {
           var modelObj;
           modelObj = this.model.toJSON();
-          modelObj.resultados = this.lancamentosCollection.toJSON();
+          modelObj.lancamentos = this.lancamentosCollection.toJSON();
           $(this.el).html(this.template(modelObj));
           helper.aguardeBtn.call(this, "#btn-buscar", "Buscar", "Buscando...", !this.buscando);
+          this.preparaGrafico();
           return this;
         }
 
-        buscarIssues(ev) {
-          var chamadosPlanejadosTxt, fim, inicio, issuesArr, nome;
-          ev.preventDefault();
-          helper.aguardeBtn.call(this, "#btn-buscar", "Buscar", "Buscando...", false);
-          this.buscando = true;
-          this.chamadosBuscaCollection.reset();
-          chamadosPlanejadosTxt = this.$("#txt-chamados").val();
-          nome = this.$("#input-nome").val();
-          inicio = this.$("#input-inicio").val();
-          fim = this.$("#input-fim").val();
-          this.model.set({
-            nome: nome,
-            chamadosPlanejadosTxt: chamadosPlanejadosTxt,
-            inicio: inicio,
-            fim: fim
-          });
-          issuesArr = _.reject(chamadosPlanejadosTxt.split(/[^\d]/), function(iss) {
-            return !iss;
-          });
-          if (_.isEmpty(issuesArr)) {
-            return alert("O campo chamados não pode estar vazio!");
-          }
-          return issuesArr.forEach((id, i, arr) => {
-            return $.get(`/redmine/issue?id=${id}`, (issue) => {
-              if (!(_.isEmpty(issue) || _.isEmpty(issue.issue))) {
-                issue.id = issue.issue.id;
-                return this.chamadosBuscaCollection.add(issue);
-              } else {
-                return console.log(`Chamado ${id} não encontrado...`);
-              }
-            }).fail((e) => {
-              return console.log(e);
-            }).always(() => {
-              if (i >= issuesArr.length - 1) {
-                this.buscando = false;
-                return this.render();
-              }
-            });
+        preparaGrafico() {
+          return $("#grafico-modal").on("shown.bs.modal", (e) => {
+            return this.renderGrafico(this.horaOrigem);
           });
         }
 
-        submit(ev) {
-          var chamadosPlanejadosTxt, fim, inicio, nome, usuarios, usuariosChk;
-          ev.preventDefault();
-          usuariosChk = this.$("#frm-sprint #tbl-usuarios input:checked");
-          if (!usuariosChk.length) {
-            helper.aguardeBtn.call(this, "#btn-salvar", "Salvar", "Salvando...", true);
-            alert("Nenhum usuário selecionado.");
-            return;
-          }
-          // chamadosChk = @$ "#frm-sprint #tbl-chamados input:checked"
-          // unless chamadosChk.length
-          //   helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvando...", true
-          //   alert "Nenhum chamado selecionado."
-          //   return
-          usuarios = _.map(usuariosChk, (el) => {
-            return this.usuarioRedmineCollection.get($(el).val()).toJSON();
-          });
-          // chamadosPlanejados = _.map chamadosChk, (el)=> @chamadosBuscaCollection.get(parseInt($(el).val())).toJSON()
-          chamadosPlanejadosTxt = this.$("#txt-chamados").val();
-          nome = this.$("#input-nome").val();
-          inicio = this.$("#input-inicio").val();
-          fim = this.$("#input-fim").val();
-          this.model.set({
-            usuarios: _.pluck(usuarios, "redmineID"),
-            nome: nome,
-            chamadosPlanejadosTxt: chamadosPlanejadosTxt,
-            // chamadosPlanejados: chamadosPlanejados
-            chamadosPlanejados: [],
-            inicio: inicio,
-            fim: fim
-          });
-          this.model.save(null, {
-            success: function(mdl) {
-              return alert("Sprint salva com sucesso!");
-            },
-            error: function(err) {
-              console.log(err);
-              return alert("Houve algum erro ao salvar a sprint./r/nConsulte o log.");
+        renderGrafico(data) {
+          var chart, chartColors, ctx;
+          chartColors = {
+            blue: "rgb(54, 162, 235)",
+            green: "rgb(75, 192, 192)",
+            grey: "rgb(201, 203, 207)",
+            orange: "rgb(255, 159, 64)",
+            purple: "rgb(153, 102, 255)",
+            red: "rgb(255, 99, 132)",
+            yellow: "rgb(255, 205, 86)"
+          };
+          ctx = $("#chart-area");
+          return chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: _.keys(data),
+              datasets: [
+                {
+                  label: 'Hora X Origem',
+                  data: _.values(data),
+                  backgroundColor: [chartColors.blue,
+                chartColors.orange,
+                chartColors.green,
+                chartColors.yellow,
+                chartColors.purple,
+                chartColors.red],
+                  borderColor: [chartColors.blue,
+                chartColors.orange,
+                chartColors.green,
+                chartColors.yellow,
+                chartColors.purple,
+                chartColors.red],
+                  borderWidth: 1
+                }
+              ]
             }
           });
+        }
+
+        alterarGrafico(e) {
+          switch ($(e.target).val()) {
+            case "origem":
+              return this.renderGrafico(this.horaOrigem);
+            case "tipo_servico":
+              return this.renderGrafico(this.horaTipoServico);
+            case "grupo_cliente":
+              return this.renderGrafico(this.horaGrupoCliente);
+          }
         }
 
       };
@@ -204,7 +207,8 @@
 
       SprintResultadoView.prototype.events = {
         "submit #frm-sprint": "submit",
-        "click #btn-buscar": "buscarIssues"
+        "click #btn-buscar": "buscarIssues",
+        "change .radio-grafico": "alterarGrafico"
       };
 
       return SprintResultadoView;

@@ -69,16 +69,11 @@
     // , (err) ->
     //   res.render 'redmine.ejs', message: err  
     app.get("/sprint/:id", function(req, res) {
-      return SprintModel.find({
-        _id: req.params.id
-      }, function(err, sprint) {
+      return SprintModel.findById(req.params.id, function(err, sprint) {
         if (err) {
           return res.status(400).send(err);
         }
-        if (!sprint.length) {
-          return res.send(null);
-        }
-        return res.send(sprint[0]);
+        return res.send(sprint);
       });
     });
     app.post("/sprint", function(req, res) {
@@ -92,6 +87,22 @@
         }
         console.log(`Sprint salva ${sprint.nome}`);
         return res.send(newSprint);
+      });
+    });
+    app.put("/sprint/:id", function(req, res) {
+      return SprintModel.findById(req.params.id, function(err, sprint) {
+        if (err) {
+          return res.status(400).send(err);
+        }
+        sprint.set(req.body);
+        return sprint.save(function(err, uSprint) {
+          if (err) {
+            console.log(`Houve um erro ao atualizar ${sprint.nome}`);
+            res.status(400).send(err);
+          }
+          console.log(`Sprint atualizada ${sprint.nome}`);
+          return res.send(uSprint);
+        });
       });
     });
     app.get("/timeentries", function(req, res) {

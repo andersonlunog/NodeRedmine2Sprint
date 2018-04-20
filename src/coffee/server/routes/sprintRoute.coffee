@@ -55,10 +55,9 @@ module.exports = (app) ->
     #   res.render 'redmine.ejs', message: err  
   
   app.get "/sprint/:id", (req, res) ->
-    SprintModel.find {_id: req.params.id}, (err, sprint) ->
+    SprintModel.findById req.params.id, (err, sprint) ->
       return res.status(400).send(err) if err
-      return res.send(null) unless sprint.length
-      res.send sprint[0]
+      res.send sprint
 
   app.post "/sprint", (req, res) ->
     sprint = req.body
@@ -69,6 +68,17 @@ module.exports = (app) ->
         res.status(400).send err
       console.log "Sprint salva #{sprint.nome}"
       res.send newSprint
+
+  app.put "/sprint/:id", (req, res) ->
+    SprintModel.findById req.params.id, (err, sprint) ->
+      return res.status(400).send(err) if err
+      sprint.set req.body
+      sprint.save (err, uSprint)->
+        if err
+          console.log "Houve um erro ao atualizar #{sprint.nome}"
+          res.status(400).send err
+        console.log "Sprint atualizada #{sprint.nome}"
+        res.send uSprint
 
   app.get "/timeentries", (req, res) ->
     # SprintModel.find {_id: req.params.sprintID}, (err, sprints) ->
