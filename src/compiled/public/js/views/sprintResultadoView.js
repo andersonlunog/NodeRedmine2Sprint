@@ -14,6 +14,15 @@
       class SprintResultadoView extends Backbone.View {
         initialize(options) {
           this.options = options;
+          this.chartColors = {
+            blue: "rgb(54, 162, 235)",
+            green: "rgb(75, 192, 192)",
+            grey: "rgb(201, 203, 207)",
+            orange: "rgb(255, 159, 64)",
+            purple: "rgb(153, 102, 255)",
+            red: "rgb(255, 99, 132)",
+            yellow: "rgb(255, 205, 86)"
+          };
           this.model = new sprintModel;
           this.model.on("change", this.render, this);
           this.usuarioRedmineCollection = new UsuarioRedmineCollection;
@@ -32,10 +41,8 @@
               }
             });
           } else {
-            this.usuarioRedmineCollection.forEach(function(mdl) {
-              return mdl.set("ativoSprint", true);
-            });
             this.render();
+            alert(`Nenhuma sprint encontrada com ID ${this.options.sprintID}`);
           }
           return this;
         }
@@ -71,9 +78,6 @@
           });
         }
 
-        // .always ()=>
-        //   buscandoLancamentos = false if i >= usuarios.length - 1
-        //     @render()
         getIssue(issueID, callback, alwaysCb) {
           return $.get(`/redmine/issue?id=${issueID}`, (issue) => {
             if (!(_.isEmpty(issue) || _.isEmpty(issue.issues))) {
@@ -111,11 +115,12 @@
         }
 
         consolidaDados() {
-          var somaPorCustomFields;
+          var _somaPorCustomFields, _somaUsuarioHoraDia;
           this.horaOrigem = {};
           this.horaGrupoCliente = {};
           this.horaTipoServico = {};
-          somaPorCustomFields = function(dest, lancamento, customFieldID) {
+          this.usuarioHoraDia = {};
+          _somaPorCustomFields = function(dest, lancamento, customFieldID) {
             var key;
             key = _.findWhere(lancamento.get("issue").custom_fields, {
               id: customFieldID
@@ -126,11 +131,26 @@
               return dest[key] = lancamento.get("hours");
             }
           };
-          return this.lancamentosCollection.forEach((lancamento) => {
-            somaPorCustomFields(this.horaOrigem, lancamento, 53);
-            somaPorCustomFields(this.horaGrupoCliente, lancamento, 51);
-            return somaPorCustomFields(this.horaTipoServico, lancamento, 58);
+          _somaUsuarioHoraDia = function(dest, lancamento) {
+            var spent_on, userName;
+            userName = lancamento.get("user").name;
+            if (dest[userName] == null) {
+              dest[userName] = {};
+            }
+            spent_on = lancamento.get("spent_on");
+            if (dest[userName][spent_on]) {
+              return dest[userName][spent_on] += lancamento.get("hours");
+            } else {
+              return dest[userName][spent_on] = lancamento.get("hours");
+            }
+          };
+          this.lancamentosCollection.forEach((lancamento) => {
+            _somaPorCustomFields(this.horaOrigem, lancamento, 53);
+            _somaPorCustomFields(this.horaGrupoCliente, lancamento, 51);
+            _somaPorCustomFields(this.horaTipoServico, lancamento, 58);
+            return _somaUsuarioHoraDia(this.usuarioHoraDia, lancamento);
           });
+          return this.renderGraficoUsuarioHoraDia();
         }
 
         render() {
@@ -145,42 +165,141 @@
 
         preparaGrafico() {
           return $("#grafico-modal").on("shown.bs.modal", (e) => {
-            return this.renderGrafico(this.horaOrigem);
+            $("#grafico-modal .modal-body .btn-group .btn").first().click();
+            if (this.graficoPizza == null) {
+              return this.renderGrafico(this.horaOrigem);
+            }
           });
         }
 
-        renderGrafico(data) {
-          var chart, chartColors, ctx;
-          chartColors = {
-            blue: "rgb(54, 162, 235)",
-            green: "rgb(75, 192, 192)",
-            grey: "rgb(201, 203, 207)",
-            orange: "rgb(255, 159, 64)",
-            purple: "rgb(153, 102, 255)",
-            red: "rgb(255, 99, 132)",
-            yellow: "rgb(255, 205, 86)"
+        teste(e) {
+          e.preventDefault();
+          return this.consolidaDados();
+        }
+
+        renderGraficoUsuarioHoraDia() {
+          var ctx, data, datasets, i, k, k1, labels, opts, ref, ref1, v, v1;
+          ctx = $("#chart-area-usuario");
+          datasets = [];
+          labels = [];
+          i = 0;
+          ref = this.usuarioHoraDia;
+          for (k in ref) {
+            v = ref[k];
+            data = [];
+            for (k1 in v) {
+              v1 = v[k1];
+              if (!_.contains(labels, k1)) {
+                labels.push(k1);
+              }
+              data.push({
+                x: k1,
+                y: v1
+              });
+            }
+            datasets.push({
+              label: k,
+              backgroundColor: this.chartColors[_.keys(this.chartColors)[i]],
+              borderColor: this.chartColors[_.keys(this.chartColors)[i++]],
+              fill: false,
+              lineTension: 0,
+              data: _.sortBy(data, "x")
+            });
+          }
+          opts = {
+            type: 'line',
+            data: {
+              labels: labels.sort(),
+              datasets: datasets
+            }
           };
-          ctx = $("#chart-area");
-          return chart = new Chart(ctx, {
+          // console.log JSON.stringify opts
+          if ((ref1 = this.graficoUsuario) != null) {
+            ref1.destroy();
+          }
+          return this.graficoUsuario = new Chart(ctx, opts);
+        }
+
+        
+        // options = {
+        //   type: 'line',
+        //   data: {
+        //     labels: ["2018-04-20", "2018-04-19", "2018-04-18", "2018-04-16", "2018-04-17"],
+        //     datasets: [
+        //       {
+        //         backgroundColor: "rgb(54, 162, 235)",
+        //         borderColor: "rgb(54, 162, 235)",
+        //         fill: false,
+        //         data: [
+        //           {
+        //             x: "2018-04-20",
+        //             y: 2.8
+        //           },
+        //           {
+        //             x: "2018-04-19",
+        //             y: 8.4
+        //           },
+        //           {
+        //             x: "2018-04-18",
+        //             y: 8.7
+        //           },
+        //           {
+        //             x: "2018-04-16",
+        //             y: 8.7
+        //           },
+        //           {
+        //             x: "2018-04-17",
+        //             y: 9.4
+        //           }
+        //         ],
+        //         label: "Winicius Oliveira"
+        //       },
+        //       {
+        //         backgroundColor: "rgb(75, 192, 192)",
+        //         borderColor: "rgb(75, 192, 192)",
+        //         fill: false,
+        //         data: [
+        //           {
+        //             x: "2018-04-16",
+        //             y: 8
+        //           },
+        //           {
+        //             x: "2018-04-17",
+        //             y: 8
+        //           }
+        //         ],
+        //         label: "Sérgio  Rodriguez"
+        //       }
+        //     ]
+        //   }
+        // }
+        // @graficoUsuario = new Chart ctx, options
+        renderGrafico(data) {
+          var ctx, ref;
+          ctx = $("#chart-generic-area");
+          if ((ref = this.graficoPizza) != null) {
+            ref.destroy();
+          }
+          return this.graficoPizza = new Chart(ctx, {
             type: 'pie',
             data: {
               labels: _.keys(data),
               datasets: [
                 {
-                  label: 'Hora X Origem',
+                  // label: 'Hora X Origem',
                   data: _.values(data),
-                  backgroundColor: [chartColors.blue,
-                chartColors.orange,
-                chartColors.green,
-                chartColors.yellow,
-                chartColors.purple,
-                chartColors.red],
-                  borderColor: [chartColors.blue,
-                chartColors.orange,
-                chartColors.green,
-                chartColors.yellow,
-                chartColors.purple,
-                chartColors.red],
+                  backgroundColor: [this.chartColors.blue,
+                this.chartColors.orange,
+                this.chartColors.green,
+                this.chartColors.yellow,
+                this.chartColors.purple,
+                this.chartColors.red],
+                  borderColor: [this.chartColors.blue,
+                this.chartColors.orange,
+                this.chartColors.green,
+                this.chartColors.yellow,
+                this.chartColors.purple,
+                this.chartColors.red],
                   borderWidth: 1
                 }
               ]
@@ -191,10 +310,13 @@
         alterarGrafico(e) {
           switch ($(e.target).val()) {
             case "origem":
+              $("#grafico-modal-label").html("Hora X Origem");
               return this.renderGrafico(this.horaOrigem);
             case "tipo_servico":
+              $("#grafico-modal-label").html("Hora X Tipo Serviço");
               return this.renderGrafico(this.horaTipoServico);
             case "grupo_cliente":
+              $("#grafico-modal-label").html("Hora X Grupo Cliente");
               return this.renderGrafico(this.horaGrupoCliente);
           }
         }
@@ -207,7 +329,8 @@
 
       SprintResultadoView.prototype.events = {
         "submit #frm-sprint": "submit",
-        "click #btn-buscar": "buscarIssues",
+        "click #btn-buscar": "getLancamentosHoras",
+        "click #btn-teste": "teste",
         "change .radio-grafico": "alterarGrafico"
       };
 

@@ -17,10 +17,20 @@ define (require, exports, module) ->
 
     events:
       "submit #frm-sprint": "submit"
-      "click #btn-buscar": "buscarIssues"
+      "click #btn-buscar": "getLancamentosHoras"
+      "click #btn-teste": "teste"
       "change .radio-grafico": "alterarGrafico"
 
     initialize: (@options)->
+      @chartColors =
+        blue: "rgb(54, 162, 235)"
+        green: "rgb(75, 192, 192)"
+        grey: "rgb(201, 203, 207)"
+        orange: "rgb(255, 159, 64)"
+        purple: "rgb(153, 102, 255)"
+        red: "rgb(255, 99, 132)"
+        yellow: "rgb(255, 205, 86)"
+
       @model = new sprintModel
       @model.on "change", @render, @
       @usuarioRedmineCollection = new UsuarioRedmineCollection
@@ -35,9 +45,8 @@ define (require, exports, module) ->
             console.log e
             alert "Houve um erro ao buscar a sprint!/r/nConsulte o log."
       else
-        @usuarioRedmineCollection.forEach (mdl)->
-          mdl.set "ativoSprint", true
         @render()
+        alert "Nenhuma sprint encontrada com ID #{@options.sprintID}"
       @
 
     getLancamentosHoras: (sprint)->
@@ -61,9 +70,6 @@ define (require, exports, module) ->
             console.log "Usuário #{id} sem lançamentos..."
         .fail (e)=>
           console.log e
-        # .always ()=>
-        #   buscandoLancamentos = false if i >= usuarios.length - 1
-        #     @render()
 
     getIssue: (issueID, callback, alwaysCb)->
       $.get "/redmine/issue?id=#{issueID}", (issue)=>
@@ -100,17 +106,33 @@ define (require, exports, module) ->
       @horaOrigem = {}
       @horaGrupoCliente = {}
       @horaTipoServico = {}
-      somaPorCustomFields = (dest, lancamento, customFieldID)->
+      @usuarioHoraDia = {}
+
+      _somaPorCustomFields = (dest, lancamento, customFieldID)->
         key = _.findWhere(lancamento.get("issue").custom_fields, {id: customFieldID}).value
         if dest[key]
           dest[key] += lancamento.get("hours")
         else
           dest[key] = lancamento.get("hours")
 
+      _somaUsuarioHoraDia = (dest, lancamento)->
+        userName = lancamento.get("user").name
+        dest[userName] = {} unless dest[userName]?
+
+        spent_on = lancamento.get "spent_on"
+        if dest[userName][spent_on]
+          dest[userName][spent_on] += lancamento.get("hours")
+        else
+          dest[userName][spent_on] = lancamento.get("hours")
+
       @lancamentosCollection.forEach (lancamento)=>
-        somaPorCustomFields @horaOrigem, lancamento, 53
-        somaPorCustomFields @horaGrupoCliente, lancamento, 51
-        somaPorCustomFields @horaTipoServico, lancamento, 58
+        _somaPorCustomFields @horaOrigem, lancamento, 53
+        _somaPorCustomFields @horaGrupoCliente, lancamento, 51
+        _somaPorCustomFields @horaTipoServico, lancamento, 58
+        _somaUsuarioHoraDia @usuarioHoraDia, lancamento
+
+      @renderGraficoUsuarioHoraDia()
+
 
     render: ->
       modelObj = @model.toJSON()
@@ -124,40 +146,124 @@ define (require, exports, module) ->
 
     preparaGrafico: ()->
       $("#grafico-modal").on "shown.bs.modal", (e)=>
-        @renderGrafico @horaOrigem
+        $("#grafico-modal .modal-body .btn-group .btn").first().click()
+        @renderGrafico @horaOrigem unless @graficoPizza?
 
-    renderGrafico: (data)->      
-      chartColors = 
-        blue: "rgb(54, 162, 235)"
-        green: "rgb(75, 192, 192)"
-        grey: "rgb(201, 203, 207)"
-        orange: "rgb(255, 159, 64)"
-        purple: "rgb(153, 102, 255)"
-        red: "rgb(255, 99, 132)"
-        yellow: "rgb(255, 205, 86)"
-      ctx = $ "#chart-area"
-      chart = new Chart ctx,
+    teste: (e)->
+      e.preventDefault()
+      @consolidaDados()
+
+    renderGraficoUsuarioHoraDia: ()->
+      ctx = $ "#chart-area-usuario"
+      datasets = []
+      labels = []
+      i = 0
+      for k, v of @usuarioHoraDia
+        data = []
+        for k1, v1 of v
+          labels.push k1 unless _.contains labels, k1
+          data.push 
+            x: k1
+            y: v1
+        datasets.push 
+          label: k
+          backgroundColor: @chartColors[_.keys(@chartColors)[i]]
+          borderColor: @chartColors[_.keys(@chartColors)[i++]]
+          fill: false
+          lineTension: 0
+          data: _.sortBy data, "x"
+      
+      opts = 
+        type: 'line',
+        data: 
+          labels: labels.sort(),
+          datasets: datasets
+
+      # console.log JSON.stringify opts
+
+      @graficoUsuario?.destroy()
+      @graficoUsuario = new Chart ctx, opts        
+
+      # options = {
+      #   type: 'line',
+      #   data: {
+      #     labels: ["2018-04-20", "2018-04-19", "2018-04-18", "2018-04-16", "2018-04-17"],
+      #     datasets: [
+      #       {
+      #         backgroundColor: "rgb(54, 162, 235)",
+      #         borderColor: "rgb(54, 162, 235)",
+      #         fill: false,
+      #         data: [
+      #           {
+      #             x: "2018-04-20",
+      #             y: 2.8
+      #           },
+      #           {
+      #             x: "2018-04-19",
+      #             y: 8.4
+      #           },
+      #           {
+      #             x: "2018-04-18",
+      #             y: 8.7
+      #           },
+      #           {
+      #             x: "2018-04-16",
+      #             y: 8.7
+      #           },
+      #           {
+      #             x: "2018-04-17",
+      #             y: 9.4
+      #           }
+      #         ],
+      #         label: "Winicius Oliveira"
+      #       },
+      #       {
+      #         backgroundColor: "rgb(75, 192, 192)",
+      #         borderColor: "rgb(75, 192, 192)",
+      #         fill: false,
+      #         data: [
+      #           {
+      #             x: "2018-04-16",
+      #             y: 8
+      #           },
+      #           {
+      #             x: "2018-04-17",
+      #             y: 8
+      #           }
+      #         ],
+      #         label: "Sérgio  Rodriguez"
+      #       }
+      #     ]
+      #   }
+      # }
+      # @graficoUsuario = new Chart ctx, options
+
+
+    renderGrafico: (data)->
+      ctx = $ "#chart-generic-area"
+      @graficoPizza?.destroy()
+      @graficoPizza = new Chart ctx,
         type: 'pie',
         data: 
           labels: _.keys(data),
           datasets: [
-            label: 'Hora X Origem',
+            # label: 'Hora X Origem',
             data: _.values(data),
             backgroundColor: [
-                chartColors.blue,
-                chartColors.orange,
-                chartColors.green,
-                chartColors.yellow,
-                chartColors.purple,
-                chartColors.red
+                @chartColors.blue,
+                @chartColors.orange,
+                @chartColors.green,
+                @chartColors.yellow,
+                @chartColors.purple,
+                @chartColors.red
             ],
             borderColor: [
-              chartColors.blue,
-              chartColors.orange,
-              chartColors.green,
-              chartColors.yellow,
-              chartColors.purple,
-              chartColors.red
+              @chartColors.blue,
+              @chartColors.orange,
+              @chartColors.green,
+              @chartColors.yellow,
+              @chartColors.purple,
+              @chartColors.red
             ],
             borderWidth: 1
           ]
@@ -165,10 +271,13 @@ define (require, exports, module) ->
     alterarGrafico: (e)->
       switch $(e.target).val()
         when "origem"
+          $("#grafico-modal-label").html "Hora X Origem"
           @renderGrafico @horaOrigem
         when "tipo_servico"
+          $("#grafico-modal-label").html "Hora X Tipo Serviço"
           @renderGrafico @horaTipoServico
         when "grupo_cliente"
+          $("#grafico-modal-label").html "Hora X Grupo Cliente"
           @renderGrafico @horaGrupoCliente
         
       

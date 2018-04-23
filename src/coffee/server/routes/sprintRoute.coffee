@@ -1,5 +1,6 @@
 redmine = require('../business/redmine')()
 SprintModel = require('../models/sprint')
+SprintResultModel = require('../models/sprintResult')
 
 isLoggedIn = (req, res, next) ->
   if req.isAuthenticated()
@@ -80,36 +81,42 @@ module.exports = (app) ->
         console.log "Sprint atualizada #{sprint.nome}"
         res.send uSprint
 
-  app.get "/timeentries", (req, res) ->
-    # SprintModel.find {_id: req.params.sprintID}, (err, sprints) ->
-    #   return res.status(400).send(err) if err
-    #   return res.send(null) unless sprints.length
-    #   sprint = sprints[0]
+  #### SPRINT RESULT
 
-      # promises = []
-    
+  app.get "/sprintResult/:sprintID", (req, res) ->
+    SprintResultModel.findOne { sprintID: req.params.sprintID }, (err, sprintResult) ->
+      return res.status(400).send(err) if err
+      res.send sprintResult
+
+  app.post "/sprintResult", (req, res) ->
+    sprint = req.body
+    newSprint = new SprintResultModel sprint
+    newSprint.save (err)->
+      if err
+        console.log "Houve um erro ao salvar resultado da sprint #{sprint.sprintID}"
+        res.status(400).send err
+      console.log "Sprint result salva #{sprint.sprintID}"
+      res.send newSprint
+
+  # app.put "/sprint/:id", (req, res) ->
+  #   SprintModel.findById req.params.id, (err, sprint) ->
+  #     return res.status(400).send(err) if err
+  #     sprint.set req.body
+  #     sprint.save (err, uSprint)->
+  #       if err
+  #         console.log "Houve um erro ao atualizar #{sprint.nome}"
+  #         res.status(400).send err
+  #       console.log "Sprint atualizada #{sprint.nome}"
+  #       res.send uSprint
+
+  app.get "/timeentries", (req, res) ->
     opts =
       user: req.query.user
       dtInicial: req.query.inicio
       dtFinal: req.query.fim
-      # callback: (timeEntriesObj, promiseResolve)->
-      #   issuePromisses = []
-      #   timeEntriesObj.time_entries.forEach (timeEntries) ->
-      #     issuePromisses.push redmine.getIssue(timeEntries.issue.id)
-      #   Promise.all(issuePromisses).then (issues)->
-      #     console.log "Resolveu as promessas issue.."
-      #     timeEntriesObj.time_entries.forEach (timeEntries, j) ->                
-      #       timeEntriesObj.time_entries[j].issue = issues[j];
-      #     promiseResolve(timeEntriesObj)
-
-      # promises.push redmine.getTimeEntries opts
 
     redmine.getTimeEntries(opts).then (timeEntries) ->
       console.log "Resolveu as promessas entries.."
       res.send timeEntries
-
-    # Promise.all(promises).then (timeEntries) ->
-    #   console.log "Resolveu as promessas entries.."
-    #   res.send timeEntries
       
   return

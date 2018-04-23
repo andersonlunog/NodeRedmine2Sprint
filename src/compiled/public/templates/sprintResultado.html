@@ -74,10 +74,16 @@
           <% }); %>
         </tbody>
     </table>
+    
+    <div class="container">
+      <canvas id="chart-area-usuario" width="600" height="400"></canvas>
+    </div>
+
     <button id="btn-salvar" type="submit" class="btn btn-primary">Salvar</button>
     <a type="button" class="btn btn-default" href="#sprints">Cancelar</a>
     <!-- Button trigger modal -->
-    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#grafico-modal">Hora x Origem</button>
+    <button type="button" class="btn" data-toggle="modal" data-target="#grafico-modal">Gráficos</button>
+    <button type="button" class="btn" id="btn-teste">Teste</button>
 
     <!-- Modal -->
     <div class="modal fade" id="grafico-modal" tabindex="-1" role="dialog" aria-labelledby="grafico-modal-label">
@@ -88,7 +94,8 @@
             <h4 class="modal-title" id="grafico-modal-label">Hora x Origem</h4>
           </div>
           <div class="modal-body">
-            <canvas id="chart-area" width="400" height="400"></canvas>
+            <canvas id="chart-generic-area" width="300" height="300"></canvas>
+            <hr>
             <div class="btn-group" data-toggle="buttons">
               <label class="btn btn-primary active">
                 <input type="radio" class="radio-grafico" name="tipo-grafico" id="btn-hora-origem" autocomplete="off" value="origem" checked>Hora X Origem

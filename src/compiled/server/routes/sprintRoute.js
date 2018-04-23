@@ -1,9 +1,11 @@
 (function() {
-  var SprintModel, isLoggedIn, redmine;
+  var SprintModel, SprintResultModel, isLoggedIn, redmine;
 
   redmine = require('../business/redmine')();
 
   SprintModel = require('../models/sprint');
+
+  SprintResultModel = require('../models/sprintResult');
 
   isLoggedIn = function(req, res, next) {
     if (req.isAuthenticated()) {
@@ -105,39 +107,52 @@
         });
       });
     });
+    //### SPRINT RESULT
+    app.get("/sprintResult/:sprintID", function(req, res) {
+      return SprintResultModel.findOne({
+        sprintID: req.params.sprintID
+      }, function(err, sprintResult) {
+        if (err) {
+          return res.status(400).send(err);
+        }
+        return res.send(sprintResult);
+      });
+    });
+    app.post("/sprintResult", function(req, res) {
+      var newSprint, sprint;
+      sprint = req.body;
+      newSprint = new SprintResultModel(sprint);
+      return newSprint.save(function(err) {
+        if (err) {
+          console.log(`Houve um erro ao salvar resultado da sprint ${sprint.sprintID}`);
+          res.status(400).send(err);
+        }
+        console.log(`Sprint result salva ${sprint.sprintID}`);
+        return res.send(newSprint);
+      });
+    });
+    // app.put "/sprint/:id", (req, res) ->
+    //   SprintModel.findById req.params.id, (err, sprint) ->
+    //     return res.status(400).send(err) if err
+    //     sprint.set req.body
+    //     sprint.save (err, uSprint)->
+    //       if err
+    //         console.log "Houve um erro ao atualizar #{sprint.nome}"
+    //         res.status(400).send err
+    //       console.log "Sprint atualizada #{sprint.nome}"
+    //       res.send uSprint
     app.get("/timeentries", function(req, res) {
       var opts;
-      // SprintModel.find {_id: req.params.sprintID}, (err, sprints) ->
-      //   return res.status(400).send(err) if err
-      //   return res.send(null) unless sprints.length
-      //   sprint = sprints[0]
-
-      // promises = []
       opts = {
         user: req.query.user,
         dtInicial: req.query.inicio,
         dtFinal: req.query.fim
       };
-      // callback: (timeEntriesObj, promiseResolve)->
-      //   issuePromisses = []
-      //   timeEntriesObj.time_entries.forEach (timeEntries) ->
-      //     issuePromisses.push redmine.getIssue(timeEntries.issue.id)
-      //   Promise.all(issuePromisses).then (issues)->
-      //     console.log "Resolveu as promessas issue.."
-      //     timeEntriesObj.time_entries.forEach (timeEntries, j) ->                
-      //       timeEntriesObj.time_entries[j].issue = issues[j];
-      //     promiseResolve(timeEntriesObj)
-
-      // promises.push redmine.getTimeEntries opts
       return redmine.getTimeEntries(opts).then(function(timeEntries) {
         console.log("Resolveu as promessas entries..");
         return res.send(timeEntries);
       });
     });
   };
-
-  // Promise.all(promises).then (timeEntries) ->
-//   console.log "Resolveu as promessas entries.."
-//   res.send timeEntries
 
 }).call(this);
