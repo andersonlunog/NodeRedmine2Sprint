@@ -6,7 +6,6 @@
   Schema = mongoose.Schema;
 
   sprintResultSchema = new Schema({
-    sprintID: Schema.Types.ObjectId,
     lancamentos: Array
   });
 

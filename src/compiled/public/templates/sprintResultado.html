@@ -1,100 +1,71 @@
 <div class="container">
-  <form id="frm-sprint">
-    <div class="form-group">
-      <label class="control-label" for="input-nome">Nome</label>
-      <input type="text" class="form-control" id="input-nome" name="nome" placeholder="Nome" value="<%= nome %>">
-    </div>
-    <div class="row">
-      <div class="col-md-6">
-        <div class="form-group">
-          <label class="control-label" for="input-inicio">Início</label>
-          <input type="date" class="form-control" id="input-inicio" name="inicio" value="<%= inicio %>" placeholder="Início" value="">
+  <h4><%= nome %></h4>
+  <p>De <%= inicio %> a <%= fim %></p>
+  
+  <!-- Modal Lançamentos -->
+  <div class="panel-group" id="painel-geral" role="tablist" aria-multiselectable="true">
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="headingGraficosHorasLancadas">
+        <h4 class="panel-title">
+          <a role="button" data-toggle="collapse" data-parent="#painel-geral" href="#collapseGraficosHorasLancadas" aria-expanded="true" aria-controls="collapseGraficosHorasLancadas">
+            Gráfico de Horas Lançadas
+          </a>
+        </h4>
+      </div>
+      <div id="collapseGraficosHorasLancadas" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingGraficosHorasLancadas">
+        <div class="panel-body">
+          <canvas id="chart-area-usuario" width="800" height="400"></canvas>
         </div>
       </div>
-      <div class="col-md-6">
-        <div class="form-group">
-          <label class="control-label" for="input-fim">Fim</label>
-          <input type="date" class="form-control" id="input-fim" name="fim" value="<%= fim %>" placeholder="Fim" value="">
+    </div>
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="headingGraficosUsuario">
+        <h4 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#painel-geral" href="#collapseGraficosUsuario" aria-expanded="false" aria-controls="collapseGraficosUsuario">
+            Gráficos por usuário
+          </a>
+        </h4>
+      </div>
+      <div id="collapseGraficosUsuario" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingGraficosUsuario">
+        <div class="panel-body">
+          <table class="table table-hover" id="tbl-usuarios-graficos">
+            <thead>
+                <tr>
+                  <th>Usuário</th>
+                  <th>Hora X Origem</th>
+                  <th>Hora X Grupo Cliente</th>
+                  <th>Hora X Tipo Serviço</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% _.each(usuarios, function(v, k){ %>
+                <tr data-usuario="<%= k %>">
+                  <td><%= k %></td>
+                  <td><div style="width: 200px; height: 200px"><canvas class="chart-usuario-origem" width="100" height="100"></canvas></div></td>
+                  <td><div style="width: 200px; height: 200px"><canvas class="chart-usuario-cliente" width="100" height="100"></canvas></div></td>
+                  <td><div style="width: 200px; height: 200px"><canvas class="chart-usuario-servico" width="100" height="100"></canvas></div></td>
+                </tr>
+                <% }); %>
+              </tbody>
+          </table>
         </div>
       </div>
     </div>
-    
-    <table class="table table-hover" id="tbl-chamados">
-      <thead>
-          <tr>
-            <th>ID</th>
-            <th>Título</th>
-            <th>Status</th>
-            <th>Atribuído</th>
-            <th>Componente</th>
-            <th>Sistema</th>
-            <th>Grupo</th>
-            <th>Origem</th>
-            <th>Serviço</th>
-            <th>Estimado</th>
-            <th>Hr lançada</th>
-            <th>Hr usuario</th>
-            <th>Dt lançamento</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% lancamentos.forEach(function(lanc){ 
-            lanc.issue.custom_fields.forEach(function(field) {
-              switch (field.id) {
-                case 19:
-                  return lanc.issue.sistema = field.value;
-                case 51:
-                  return lanc.issue.grupo_cliente = field.value;
-                case 52:
-                  return lanc.issue.componente = field.value;
-                case 53:
-                  return lanc.issue.origem = field.value;
-                case 58:
-                  return lanc.issue.tipo_servico = field.value;
-              }
-            });
-          %>
-          <tr>
-            <td>
-              <a href="https://siacon.redmineup.com/issues/<%= lanc.issue.id%>" target="_blank">#<%= lanc.issue.id %></a>
-            </td>
-            <td><%= lanc.issue.subject %></td>
-            <td><%= lanc.issue.status ? lanc.issue.status.name : "" %></td>
-            <td><%= lanc.issue.assigned_to ? lanc.issue.assigned_to.name : "" %></td>
-            <td><%= lanc.issue.componente %></td>
-            <td><%= lanc.issue.sistema %></td>
-            <td><%= lanc.issue.grupo_cliente %></td>
-            <td><%= lanc.issue.origem %></td>
-            <td><%= lanc.issue.tipo_servico %></td>
-            <td><%= lanc.issue.estimated_hours ? lanc.issue.estimated_hours.toLocaleString().replace(".", ",") : "" %></td>
-            <td><%= lanc.hours ? lanc.hours.toLocaleString().replace(".", ",") : "" %></td>
-            <td><%= lanc.user ? lanc.user.name : "" %></td>
-            <td><%= lanc.spent_on ? lanc.spent_on : "" %></td>
-          </tr>
-          <% }); %>
-        </tbody>
-    </table>
-    
-    <div class="container">
-      <canvas id="chart-area-usuario" width="600" height="400"></canvas>
-    </div>
 
-    <button id="btn-salvar" type="submit" class="btn btn-primary">Salvar</button>
-    <a type="button" class="btn btn-default" href="#sprints">Cancelar</a>
-    <!-- Button trigger modal -->
-    <button type="button" class="btn" data-toggle="modal" data-target="#grafico-modal">Gráficos</button>
-    <button type="button" class="btn" id="btn-teste">Teste</button>
-
-    <!-- Modal -->
-    <div class="modal fade" id="grafico-modal" tabindex="-1" role="dialog" aria-labelledby="grafico-modal-label">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="grafico-modal-label">Hora x Origem</h4>
-          </div>
-          <div class="modal-body">
-            <canvas id="chart-generic-area" width="300" height="300"></canvas>
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="headingGraficosTotalizadores">
+        <h4 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#painel-geral" href="#collapseGraficosTotalizadores" aria-expanded="false" aria-controls="collapseGraficosTotalizadores">
+            Gráficos Totalizadores
+          </a>
+        </h4>
+      </div>
+      <div id="collapseGraficosTotalizadores" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingGraficosTotalizadores">
+        <div class="panel-body">
+          <h4 id="grafico-modal-label">Hora x Origem</h4>
+          <div style="width: 400px; height: 400px"><canvas id="chart-generic-area" width="300" height="300"></canvas></div>
             <hr>
             <div class="btn-group" data-toggle="buttons">
               <label class="btn btn-primary active">
@@ -107,12 +78,82 @@
                 <input type="radio" class="radio-grafico" name="tipo-grafico" id="btn-hora-tipo-servico" autocomplete="off" value="tipo_servico">Hora X Tipo Serviço
               </label>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Fechar</button>
-          </div>
         </div>
       </div>
     </div>
-  </form>
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="headingLancamentos">
+        <h4 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#painel-geral" href="#collapseLancamentos" aria-expanded="false" aria-controls="collapseLancamentos">
+            Lista de Lançamentos
+          </a>
+        </h4>
+      </div>
+      <div id="collapseLancamentos" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingLancamentos">
+        <div class="panel-body">            
+          <table class="table table-hover" id="tbl-chamados">
+            <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Título</th>
+                  <th>Status</th>
+                  <th>Atribuído</th>
+                  <th>Componente</th>
+                  <th>Sistema</th>
+                  <th>Grupo</th>
+                  <th>Origem</th>
+                  <th>Serviço</th>
+                  <th>Estimado</th>
+                  <th>Hr lançada</th>
+                  <th>Hr usuario</th>
+                  <th>Dt lançamento</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% lancamentos.forEach(function(lanc){ 
+                  lanc.issue.custom_fields.forEach(function(field) {
+                    switch (field.id) {
+                      case 19:
+                        return lanc.issue.sistema = field.value;
+                      case 51:
+                        return lanc.issue.grupo_cliente = field.value;
+                      case 52:
+                        return lanc.issue.componente = field.value;
+                      case 53:
+                        return lanc.issue.origem = field.value;
+                      case 58:
+                        return lanc.issue.tipo_servico = field.value;
+                    }
+                  });
+                %>
+                <tr>
+                  <td>
+                    <a href="https://siacon.redmineup.com/issues/<%= lanc.issue.id%>" target="_blank">#<%= lanc.issue.id %></a>
+                  </td>
+                  <td><%= lanc.issue.subject %></td>
+                  <td><%= lanc.issue.status ? lanc.issue.status.name : "" %></td>
+                  <td><%= lanc.issue.assigned_to ? lanc.issue.assigned_to.name : "" %></td>
+                  <td><%= lanc.issue.componente %></td>
+                  <td><%= lanc.issue.sistema %></td>
+                  <td><%= lanc.issue.grupo_cliente %></td>
+                  <td><%= lanc.issue.origem %></td>
+                  <td><%= lanc.issue.tipo_servico %></td>
+                  <td><%= lanc.issue.estimated_hours ? lanc.issue.estimated_hours.toLocaleString().replace(".", ",") : "" %></td>
+                  <td><%= lanc.hours ? lanc.hours.toLocaleString().replace(".", ",") : "" %></td>
+                  <td><%= lanc.user ? lanc.user.name : "" %></td>
+                  <td><%= lanc.spent_on ? lanc.spent_on : "" %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p>&nbsp;</p>
+  <a type="button" class="btn btn-default" href="#sprints">Voltar</a>
+  <button id="btn-atualizar-tudo" type="submit" class="btn btn-default">Recarregar do Redmine</button>
+  <button id="btn-salvar" type="submit" class="btn btn-primary">Salvar</button>
 </div>

@@ -5,6 +5,7 @@ define (require, exports, module) ->
   Backbone = require "backbone"
   template = require "text!templates/sprintResultado.html"
   sprintModel = require "models/sprintModel"
+  sprintResultModel = require "models/sprintResultModel"
   UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
   Chart = require "chart"
   helper = require "helpers/helper"
@@ -16,9 +17,8 @@ define (require, exports, module) ->
     template: _.template template
 
     events:
-      "submit #frm-sprint": "submit"
-      "click #btn-buscar": "getLancamentosHoras"
-      "click #btn-teste": "teste"
+      "click #btn-salvar": "salvar"
+      "click #btn-atualizar-tudo": "atualizarTudo"
       "change .radio-grafico": "alterarGrafico"
 
     initialize: (@options)->
@@ -30,8 +30,16 @@ define (require, exports, module) ->
         purple: "rgb(153, 102, 255)"
         red: "rgb(255, 99, 132)"
         yellow: "rgb(255, 205, 86)"
+        gold: "rgb(192,178,131)"
+        charcoal: "rgb(55,55,55)"
+        teal: "rgb(7,136,155)"
+        powder: "rgb(102,185,191)"
+        ink: "rgb(6,47,79)"
+        oxblood: "rgb(118,50,63)"
+        forest: "rgb(30,57,42)"
 
       @model = new sprintModel
+      @resultModel = new sprintResultModel
       @model.on "change", @render, @
       @usuarioRedmineCollection = new UsuarioRedmineCollection
       @lancamentosCollection = new Backbone.Collection
@@ -39,8 +47,18 @@ define (require, exports, module) ->
       @render()
       if @options.sprintID
         @model.set "_id": @options.sprintID
+        @resultModel.set "_id": @options.sprintID
         @model.fetch
-          success: @getLancamentosHoras.bind(@)
+          success: (sprint)=>
+            @resultModel.fetch
+              success: (sprintResult)=>
+                @lancamentosCollection.reset sprintResult.get "lancamentos"
+                @render()
+                @consolidaDados()
+                # @buscaLancamentosHoras sprint.get("usuarios"), sprint.get("inicio"), sprint.get("fim")
+              error: (e)->
+                console.log e
+                alert "Houve um erro ao buscar resultado da sprint!/r/nConsulte o log."
           error: (e)->
             console.log e
             alert "Houve um erro ao buscar a sprint!/r/nConsulte o log."
@@ -49,10 +67,39 @@ define (require, exports, module) ->
         alert "Nenhuma sprint encontrada com ID #{@options.sprintID}"
       @
 
-    getLancamentosHoras: (sprint)->
-      usuarios = sprint.get "usuarios"
-      inicio = sprint.get "inicio"
-      fim = sprint.get "fim"
+    render: ->
+      modelObj = @model.toJSON()
+      modelObj.lancamentos = @lancamentosCollection.toJSON()
+      modelObj.usuarios = @usuarioHoraCustoms or {}
+      $(@el).html @template modelObj
+
+      helper.aguardeBtn.call @, "#btn-atualizar-tudo", "Atualizar Tudo", "Atualizando...", !@buscando
+      @
+
+    getColors: (labels)->
+      ret = []
+      for label, i in labels
+        if _.contains ["Contrato", "Standard", "Normal"], label
+          ret.push @chartColors.blue
+        else if _.contains ["Venda", "Custom"], label
+          ret.push @chartColors.green
+        else if _.contains ["Bonificação", "Interno", "Correção"], label
+          ret.push @chartColors.yellow
+        else if _.contains ["Investimento", "Retrabalho"], label
+          ret.push @chartColors.orange
+        else
+          ret.push _.values(@chartColors)[i + 6]
+      ret
+
+    atualizarTudo: (e)->
+      e.preventDefault()
+      @resultModel.set "lancamentos", []
+      @buscaLancamentosHoras @model.get("usuarios"), @model.get("inicio"), @model.get("fim")
+
+    buscaLancamentosHoras: (usuarios, inicio, fim)->
+      @buscando = true
+      @lancamentosCollection.reset []
+      helper.aguardeBtn.call @, "#btn-atualizar-tudo", "Atualizar Tudo", "Atualizando...", !@buscando
       usuarios.forEach (id, i, arr)=>
         $.get "/timeentries?user=#{id}&inicio=#{inicio}&fim=#{fim}", (lancamento)=>
           unless _.isEmpty(lancamento) or _.isEmpty(lancamento.time_entries)
@@ -62,9 +109,12 @@ define (require, exports, module) ->
                 time.issue = issue
                 console.log time
                 @lancamentosCollection.add time
+                @resultModel.set "lancamentos", @lancamentosCollection.toJSON()
               , ()=>
                 if j >= lancamento.time_entries.length - 1 and i >= usuarios.length - 1
                   console.log "Acabou... #{@lancamentosCollection.length}"
+                  @buscando = false
+                  @render()
                   @consolidaDados()
           else
             console.log "Usuário #{id} sem lançamentos..."
@@ -107,9 +157,10 @@ define (require, exports, module) ->
       @horaGrupoCliente = {}
       @horaTipoServico = {}
       @usuarioHoraDia = {}
+      @usuarioHoraCustoms = {}      
 
       _somaPorCustomFields = (dest, lancamento, customFieldID)->
-        key = _.findWhere(lancamento.get("issue").custom_fields, {id: customFieldID}).value
+        key = _.findWhere(lancamento.get("issue").custom_fields, {id: customFieldID})?.value
         if dest[key]
           dest[key] += lancamento.get("hours")
         else
@@ -120,53 +171,87 @@ define (require, exports, module) ->
         dest[userName] = {} unless dest[userName]?
 
         spent_on = lancamento.get "spent_on"
+        match = (/(\d{4})-(\d{2})-(\d{2})/g).exec(spent_on)
+        spent_on = "#{match[3]}/#{match[2]}"
         if dest[userName][spent_on]
           dest[userName][spent_on] += lancamento.get("hours")
         else
           dest[userName][spent_on] = lancamento.get("hours")
+
+      _somaUsuarioHoraCustoms = (dest, lancamento)->
+        userName = lancamento.get("user").name
+        unless dest[userName]?
+          dest[userName] = 
+            origem: {}
+            cliente: {}
+            servico: {}
+
+        _somaPorCustomFields dest[userName].origem, lancamento, 53
+        _somaPorCustomFields dest[userName].cliente, lancamento, 51
+        _somaPorCustomFields dest[userName].servico, lancamento, 58
 
       @lancamentosCollection.forEach (lancamento)=>
         _somaPorCustomFields @horaOrigem, lancamento, 53
         _somaPorCustomFields @horaGrupoCliente, lancamento, 51
         _somaPorCustomFields @horaTipoServico, lancamento, 58
         _somaUsuarioHoraDia @usuarioHoraDia, lancamento
+        _somaUsuarioHoraCustoms @usuarioHoraCustoms, lancamento
 
+      @render()
       @renderGraficoUsuarioHoraDia()
+      @renderGraficosUsuarios()
+      @renderGraficoTotais @horaOrigem unless @graficoPizza?
 
+    salvar: (ev) ->
+      ev.preventDefault()
 
-    render: ->
-      modelObj = @model.toJSON()
-      modelObj.lancamentos = @lancamentosCollection.toJSON()
-      $(@el).html @template modelObj
+      @resultModel.save null,
+        success: (mdl)->
+          alert "Resultado salvo com sucesso!"
+        error: (err)->
+          console.log err
+          alert "Houve algum erro ao salvar o resultado./r/nConsulte o log."
 
-      helper.aguardeBtn.call @, "#btn-buscar", "Buscar", "Buscando...", !@buscando
+    renderGraficosUsuarios: ()->
+      _renderPieChart = (ctx, data)=>
+        labels = _.keys(data)
+        colors =  @getColors(labels)
+        new Chart ctx,
+          type: 'pie'
+          data:
+            labels: labels
+            datasets: [
+              data: _.values(data)
+              backgroundColor: colors
+              borderColor: colors
+              borderWidth: 1
+            ]
+          options:
+            responsive: true
 
-      @preparaGrafico()
-      @
-
-    preparaGrafico: ()->
-      $("#grafico-modal").on "shown.bs.modal", (e)=>
-        $("#grafico-modal .modal-body .btn-group .btn").first().click()
-        @renderGrafico @horaOrigem unless @graficoPizza?
-
-    teste: (e)->
-      e.preventDefault()
-      @consolidaDados()
+      _.each @usuarioHoraCustoms, (v, k)=>
+        tr = @$("tr[data-usuario='#{k}']")
+        v.origem.chart?.destroy()
+        v.cliente.chart?.destroy()
+        v.servico.chart?.destroy()
+        v.origem.chart = _renderPieChart tr.find(".chart-usuario-origem").first(), v.origem
+        v.cliente.chart = _renderPieChart tr.find(".chart-usuario-cliente").first(), v.cliente
+        v.servico.chart = _renderPieChart tr.find(".chart-usuario-servico").first(), v.servico
 
     renderGraficoUsuarioHoraDia: ()->
-      ctx = $ "#chart-area-usuario"
+      ctx = @$ "#chart-area-usuario"
       datasets = []
       labels = []
       i = 0
-      for k, v of @usuarioHoraDia
+      for usuario, diaHora of @usuarioHoraDia
         data = []
-        for k1, v1 of v
-          labels.push k1 unless _.contains labels, k1
+        for dia, hora of diaHora
+          labels.push dia unless _.contains labels, dia
           data.push 
-            x: k1
-            y: v1
+            x: dia
+            y: hora
         datasets.push 
-          label: k
+          label: usuario
           backgroundColor: @chartColors[_.keys(@chartColors)[i]]
           borderColor: @chartColors[_.keys(@chartColors)[i++]]
           fill: false
@@ -178,107 +263,39 @@ define (require, exports, module) ->
         data: 
           labels: labels.sort(),
           datasets: datasets
-
-      # console.log JSON.stringify opts
+        options:
+          responsive: false
 
       @graficoUsuario?.destroy()
-      @graficoUsuario = new Chart ctx, opts        
+      @graficoUsuario = new Chart ctx, opts       
 
-      # options = {
-      #   type: 'line',
-      #   data: {
-      #     labels: ["2018-04-20", "2018-04-19", "2018-04-18", "2018-04-16", "2018-04-17"],
-      #     datasets: [
-      #       {
-      #         backgroundColor: "rgb(54, 162, 235)",
-      #         borderColor: "rgb(54, 162, 235)",
-      #         fill: false,
-      #         data: [
-      #           {
-      #             x: "2018-04-20",
-      #             y: 2.8
-      #           },
-      #           {
-      #             x: "2018-04-19",
-      #             y: 8.4
-      #           },
-      #           {
-      #             x: "2018-04-18",
-      #             y: 8.7
-      #           },
-      #           {
-      #             x: "2018-04-16",
-      #             y: 8.7
-      #           },
-      #           {
-      #             x: "2018-04-17",
-      #             y: 9.4
-      #           }
-      #         ],
-      #         label: "Winicius Oliveira"
-      #       },
-      #       {
-      #         backgroundColor: "rgb(75, 192, 192)",
-      #         borderColor: "rgb(75, 192, 192)",
-      #         fill: false,
-      #         data: [
-      #           {
-      #             x: "2018-04-16",
-      #             y: 8
-      #           },
-      #           {
-      #             x: "2018-04-17",
-      #             y: 8
-      #           }
-      #         ],
-      #         label: "Sérgio  Rodriguez"
-      #       }
-      #     ]
-      #   }
-      # }
-      # @graficoUsuario = new Chart ctx, options
-
-
-    renderGrafico: (data)->
-      ctx = $ "#chart-generic-area"
+    renderGraficoTotais: (data)->
+      ctx = @$ "#chart-generic-area"
       @graficoPizza?.destroy()
+      labels = _.keys(data)
+      colors =  @getColors(labels)
       @graficoPizza = new Chart ctx,
-        type: 'pie',
+        type: 'pie'
         data: 
-          labels: _.keys(data),
+          labels: labels
           datasets: [
-            # label: 'Hora X Origem',
-            data: _.values(data),
-            backgroundColor: [
-                @chartColors.blue,
-                @chartColors.orange,
-                @chartColors.green,
-                @chartColors.yellow,
-                @chartColors.purple,
-                @chartColors.red
-            ],
-            borderColor: [
-              @chartColors.blue,
-              @chartColors.orange,
-              @chartColors.green,
-              @chartColors.yellow,
-              @chartColors.purple,
-              @chartColors.red
-            ],
+            data: _.values(data)
+            backgroundColor: colors
+            borderColor: colors
             borderWidth: 1
           ]
 
     alterarGrafico: (e)->
       switch $(e.target).val()
         when "origem"
-          $("#grafico-modal-label").html "Hora X Origem"
-          @renderGrafico @horaOrigem
+          @$("#grafico-modal-label").html "Hora X Origem"
+          @renderGraficoTotais @horaOrigem
         when "tipo_servico"
-          $("#grafico-modal-label").html "Hora X Tipo Serviço"
-          @renderGrafico @horaTipoServico
+          @$("#grafico-modal-label").html "Hora X Tipo Serviço"
+          @renderGraficoTotais @horaTipoServico
         when "grupo_cliente"
-          $("#grafico-modal-label").html "Hora X Grupo Cliente"
-          @renderGrafico @horaGrupoCliente
+          @$("#grafico-modal-label").html "Hora X Grupo Cliente"
+          @renderGraficoTotais @horaGrupoCliente
         
       
   

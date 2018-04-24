@@ -5,7 +5,6 @@
       class SprintResultModel extends BaseModel {};
 
       SprintResultModel.prototype.defaults = {
-        sprintID: null,
         lancamentos: []
       };
 

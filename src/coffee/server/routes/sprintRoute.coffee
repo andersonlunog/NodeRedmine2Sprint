@@ -58,7 +58,7 @@ module.exports = (app) ->
   app.get "/sprint/:id", (req, res) ->
     SprintModel.findById req.params.id, (err, sprint) ->
       return res.status(400).send(err) if err
-      res.send sprint
+      res.send sprint or {}
 
   app.post "/sprint", (req, res) ->
     sprint = req.body
@@ -83,20 +83,24 @@ module.exports = (app) ->
 
   #### SPRINT RESULT
 
-  app.get "/sprintResult/:sprintID", (req, res) ->
-    SprintResultModel.findOne { sprintID: req.params.sprintID }, (err, sprintResult) ->
+  app.get "/sprintResult/:id", (req, res) ->
+    SprintResultModel.findById req.params.id, (err, sprintResult) ->
       return res.status(400).send(err) if err
-      res.send sprintResult
+      res.send sprintResult or {}
 
-  app.post "/sprintResult", (req, res) ->
-    sprint = req.body
-    newSprint = new SprintResultModel sprint
-    newSprint.save (err)->
-      if err
-        console.log "Houve um erro ao salvar resultado da sprint #{sprint.sprintID}"
-        res.status(400).send err
-      console.log "Sprint result salva #{sprint.sprintID}"
-      res.send newSprint
+  app.put "/sprintResult/:id", (req, res) ->
+    SprintResultModel.findById req.params.id, (err, sprint) ->
+      return res.status(400).send(err) if err
+      if sprint?
+        sprint.set req.body
+      else
+        sprint = new SprintResultModel req.body
+      sprint.save (err, uSprint)->
+        if err
+          console.log "Houve um erro ao atualizar resultado da sprint #{req.params.id}"
+          res.status(400).send err
+        console.log "Resultado da sprint atualizada #{req.params.id}"
+        res.send uSprint
 
   # app.put "/sprint/:id", (req, res) ->
   #   SprintModel.findById req.params.id, (err, sprint) ->

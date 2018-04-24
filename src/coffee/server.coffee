@@ -26,9 +26,11 @@ app.use morgan('dev')
 # log every request to the console
 app.use cookieParser()
 # read cookies (needed for auth)
-app.use bodyParser.json()
+app.use bodyParser.json limit: "5mb"
 # get information from html forms
-app.use bodyParser.urlencoded(extended: true)
+app.use bodyParser.urlencoded 
+  extended: true
+  limit: "5mb"
 app.set 'view engine', 'ejs'
 app.set 'views', './server/views'
 # set up ejs for templating

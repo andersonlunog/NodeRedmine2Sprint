@@ -75,7 +75,7 @@
         if (err) {
           return res.status(400).send(err);
         }
-        return res.send(sprint);
+        return res.send(sprint || {});
       });
     });
     app.post("/sprint", function(req, res) {
@@ -108,27 +108,32 @@
       });
     });
     //### SPRINT RESULT
-    app.get("/sprintResult/:sprintID", function(req, res) {
-      return SprintResultModel.findOne({
-        sprintID: req.params.sprintID
-      }, function(err, sprintResult) {
+    app.get("/sprintResult/:id", function(req, res) {
+      return SprintResultModel.findById(req.params.id, function(err, sprintResult) {
         if (err) {
           return res.status(400).send(err);
         }
-        return res.send(sprintResult);
+        return res.send(sprintResult || {});
       });
     });
-    app.post("/sprintResult", function(req, res) {
-      var newSprint, sprint;
-      sprint = req.body;
-      newSprint = new SprintResultModel(sprint);
-      return newSprint.save(function(err) {
+    app.put("/sprintResult/:id", function(req, res) {
+      return SprintResultModel.findById(req.params.id, function(err, sprint) {
         if (err) {
-          console.log(`Houve um erro ao salvar resultado da sprint ${sprint.sprintID}`);
-          res.status(400).send(err);
+          return res.status(400).send(err);
         }
-        console.log(`Sprint result salva ${sprint.sprintID}`);
-        return res.send(newSprint);
+        if (sprint != null) {
+          sprint.set(req.body);
+        } else {
+          sprint = new SprintResultModel(req.body);
+        }
+        return sprint.save(function(err, uSprint) {
+          if (err) {
+            console.log(`Houve um erro ao atualizar resultado da sprint ${req.params.id}`);
+            res.status(400).send(err);
+          }
+          console.log(`Resultado da sprint atualizada ${req.params.id}`);
+          return res.send(uSprint);
+        });
       });
     });
     // app.put "/sprint/:id", (req, res) ->
