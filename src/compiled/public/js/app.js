@@ -33,8 +33,8 @@
         sprintID: id
       });
     });
-    Backbone.Events.on("view:definirEquipe", function() {
-      return app.createView("definirEquipe", require("views/definirEquipeView"));
+    Backbone.Events.on("view:importUsuariosRedmine", function() {
+      return app.createView("importUsuariosRedmine", require("views/importUsuariosRedmineView"));
     });
     // app.createCalculoView = (id)-> createView "calculo.calculo", require("views/calculo/CalculoView"), calculoID: id
     createView = function(name, View, options = {}) {

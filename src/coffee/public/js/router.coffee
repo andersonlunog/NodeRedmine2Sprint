@@ -9,7 +9,7 @@ define (require, exports, module) ->
       "sprint": -> Backbone.Events.trigger "view:sprintCadastro"
       "sprint/:id": (id)-> Backbone.Events.trigger "view:sprintCadastro", id
       "sprint/result/:id": (id)-> Backbone.Events.trigger "view:sprintResultado", id
-      "definir-equipe": -> Backbone.Events.trigger "view:definirEquipe"
+      "import-usuarios": -> Backbone.Events.trigger "view:importUsuariosRedmine"
 
     #   "calculo" : "calculo"
     #   "calculo/load/:id" : "calculo"

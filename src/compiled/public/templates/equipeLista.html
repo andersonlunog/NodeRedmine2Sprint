@@ -1,0 +1,24 @@
+<div class="container">
+  <div class="row">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% _.each(equipes, function(equipe) { %>
+        <tr>
+          <td><%= equipe.attributes.nome %></td>
+          <td>
+            <a class="btn btn-mini btn-primary" href="#/equipe/<%= equipe.id %>">Editar</a>
+            <a class="btn btn-mini btn-danger btn-delete" data-id="<%= equipe.id %>">Del</a>
+          </td>
+        </tr>
+        <%})%>
+      </tbody>    
+    </table>
+    <a class="btn btn-default" href="#equipe">Novo</a>
+  </div>
+</div>

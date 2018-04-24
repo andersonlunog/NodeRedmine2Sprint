@@ -296,7 +296,5 @@ define (require, exports, module) ->
         when "grupo_cliente"
           @$("#grafico-modal-label").html "Hora X Grupo Cliente"
           @renderGraficoTotais @horaGrupoCliente
-        
-      
-  
+
   module.exports = SprintResultadoView

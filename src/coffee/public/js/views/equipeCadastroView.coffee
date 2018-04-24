@@ -3,12 +3,12 @@ define (require, exports, module) ->
   _ = require "underscore"
   $ = require "jquery"
   Backbone = require "backbone"
-  template = require "text!templates/definirEquipe.html"  
+  template = require "text!templates/importUsuariosRedmine.html"  
   UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
   helper = require "helpers/helper"
   require "bootstrap"
 
-  class DefinirEquipeView extends Backbone.View
+  class ImportUsuariosRedmineView extends Backbone.View
     el: ".mid-container"
 
     template: _.template template
@@ -105,29 +105,4 @@ define (require, exports, module) ->
           helper.aguardeBtn.call that, "#btn-salvar", "Salvar", "Salvar", true
           alert "Houve um erro ao salvar usuários!/r/nConsulte o log."
 
-      # usuarioRedmineCollection = new UsuarioRedmineCollection
-      # usuarioRedmineCollection.fetch
-      #   success: (collection, response) =>
-      #     checks.each (i)->
-      #       id = parseInt $(@).attr("name")
-      #       mdl = that.collection.get id
-      #       unless usuarioRedmineCollection.findWhere redmineID: id
-      #         usuarioRedmineCollection.add
-      #           redmineID: id
-      #           nome: "#{mdl.get("firstname")} #{mdl.get("lastname")}"
-      #       if i is checks.length - 1
-      #         usuarioRedmineCollection.sync "create", usuarioRedmineCollection,
-      #           success: (msg)->
-      #             console.log msg
-      #             helper.aguardeBtn.call that, "#btn-salvar", "Salvar", "Salvar", true
-      #             alert "Usuários importados com sucesso!"
-      #           error: (e)->
-      #             console.log e
-      #             helper.aguardeBtn.call that, "#btn-salvar", "Salvar", "Salvar", true
-      #             alert "Houve um erro ao salvar usuários!/r/nConsulte o log."
-      #   error: (e) =>
-      #     console.log e
-      #     helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvar", true
-      #     alert "Houve um erro ao salvar usuários!/r/nConsulte o log."
-
-  module.exports = DefinirEquipeView
+  module.exports = ImportUsuariosRedmineView

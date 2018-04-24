@@ -1,15 +1,15 @@
 (function() {
   define(function(require, exports, module) {
-    var $, Backbone, DefinirEquipeView, UsuarioRedmineCollection, _, helper, template;
+    var $, Backbone, ImportUsuariosRedmineView, UsuarioRedmineCollection, _, helper, template;
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
-    template = require("text!templates/definirEquipe.html");
+    template = require("text!templates/importUsuariosRedmine.html");
     UsuarioRedmineCollection = require("models/usuarioRedmineCollection");
     helper = require("helpers/helper");
     require("bootstrap");
-    DefinirEquipeView = (function() {
-      class DefinirEquipeView extends Backbone.View {
+    ImportUsuariosRedmineView = (function() {
+      class ImportUsuariosRedmineView extends Backbone.View {
         initialize() {
           this.inicio = 50;
           this.fim = 60;
@@ -123,45 +123,21 @@
 
       };
 
-      DefinirEquipeView.prototype.el = ".mid-container";
+      ImportUsuariosRedmineView.prototype.el = ".mid-container";
 
-      DefinirEquipeView.prototype.template = _.template(template);
+      ImportUsuariosRedmineView.prototype.template = _.template(template);
 
-      DefinirEquipeView.prototype.events = {
+      ImportUsuariosRedmineView.prototype.events = {
         "click #btn-buscar": "buscar",
         "click #btn-salvar": "salvar",
         "click #frm-usuarios tbody tr": "trclick",
         "change .chk-usuario": "chkAtivoChanged"
       };
 
-      return DefinirEquipeView;
+      return ImportUsuariosRedmineView;
 
     }).call(this);
-    // usuarioRedmineCollection = new UsuarioRedmineCollection
-    // usuarioRedmineCollection.fetch
-    //   success: (collection, response) =>
-    //     checks.each (i)->
-    //       id = parseInt $(@).attr("name")
-    //       mdl = that.collection.get id
-    //       unless usuarioRedmineCollection.findWhere redmineID: id
-    //         usuarioRedmineCollection.add
-    //           redmineID: id
-    //           nome: "#{mdl.get("firstname")} #{mdl.get("lastname")}"
-    //       if i is checks.length - 1
-    //         usuarioRedmineCollection.sync "create", usuarioRedmineCollection,
-    //           success: (msg)->
-    //             console.log msg
-    //             helper.aguardeBtn.call that, "#btn-salvar", "Salvar", "Salvar", true
-    //             alert "Usuários importados com sucesso!"
-    //           error: (e)->
-    //             console.log e
-    //             helper.aguardeBtn.call that, "#btn-salvar", "Salvar", "Salvar", true
-    //             alert "Houve um erro ao salvar usuários!/r/nConsulte o log."
-    //   error: (e) =>
-    //     console.log e
-    //     helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvar", true
-    //     alert "Houve um erro ao salvar usuários!/r/nConsulte o log."
-    return module.exports = DefinirEquipeView;
+    return module.exports = ImportUsuariosRedmineView;
   });
 
 }).call(this);
