@@ -1,22 +1,54 @@
 (function() {
   define(function(require, exports, module) {
-    var $, Backbone, ImportUsuariosRedmineView, UsuarioRedmineCollection, _, helper, template;
+    var $, Backbone, EquipeCadastroView, EquipeModel, UsuarioRedmineCollection, _, helper, template;
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
-    template = require("text!templates/importUsuariosRedmine.html");
+    template = require("text!templates/equipeCadastro.html");
     UsuarioRedmineCollection = require("models/usuarioRedmineCollection");
+    EquipeModel = require("models/equipeModel");
     helper = require("helpers/helper");
     require("bootstrap");
-    ImportUsuariosRedmineView = (function() {
-      class ImportUsuariosRedmineView extends Backbone.View {
-        initialize() {
-          this.inicio = 50;
-          this.fim = 60;
-          this.collection = new UsuarioRedmineCollection;
+    EquipeCadastroView = (function() {
+      class EquipeCadastroView extends Backbone.View {
+        initialize(options) {
+          this.options = options;
+          this.usuarioRedmineCollection = new UsuarioRedmineCollection;
+          this.model = new EquipeModel;
           this.render();
-          this.collection.on("add remove reset change", this.render, this);
-          this.collection.fetch({
+          this.listenTo(this.model, "change", this.render);
+          this.usuarioRedmineCollection.fetch({
+            data: {
+              ativo: true
+            },
+            success: (usuarios) => {
+              if (this.options.equipeID) {
+                this.model.set({
+                  "_id": this.options.equipeID
+                });
+                return this.model.fetch({
+                  success: (equipe) => {
+                    usuarios.forEach(function(mdl) {
+                      if (_.some(equipe.get("usuarios"), function(u) {
+                        return u.redmineID === mdl.get("redmineID");
+                      })) {
+                        return mdl.set("ativoEquipe", true);
+                      }
+                    });
+                    return this.render();
+                  },
+                  error: function(e) {
+                    console.log(e);
+                    return alert("Houve um erro ao buscar a equipe!/r/nConsulte o log.");
+                  }
+                });
+              } else {
+                this.usuarioRedmineCollection.forEach(function(mdl) {
+                  return mdl.set("ativoEquipe", false);
+                });
+                return this.render();
+              }
+            },
             error: (e) => {
               console.log(e);
               return alert("Houve um erro ao buscar usuários!/r/nConsulte o log.");
@@ -27,117 +59,76 @@
 
         render() {
           this.$el.html(this.template({
-            usuarios: this.collection.models,
-            buscando: this.buscando,
-            inicio: this.inicio,
-            fim: this.fim
+            usuariosRedmine: this.usuarioRedmineCollection.toJSON(),
+            model: this.model.toJSON()
           }));
-          helper.aguardeBtn.call(this, "#btn-buscar", "Buscar", "Buscando...", !this.buscando);
-          helper.aguardeBtn.call(this, "#btn-salvar", "Salvar", "Buscando...", !this.buscando);
           return this;
         }
 
-        buscar(ev) {
-          var i, j, ref, ref1, results;
-          ev.preventDefault();
-          this.inicio = parseInt($("#input-inicio").val());
-          this.fim = parseInt($("#input-fim").val());
-          console.log(`Buscando os usuário de ${this.inicio} a ${this.fim}`);
-          this.buscando = true;
-          results = [];
-          //*******
-          for (i = j = ref = this.inicio, ref1 = this.fim; ref <= ref1 ? j <= ref1 : j >= ref1; i = ref <= ref1 ? ++j : --j) {
-            results.push(((id) => {
-              return $.get(`/buscarRedmine?id=${id}`, (u) => {
-                var userDB;
-                if (!(_.isEmpty(u) || _.isEmpty(u.user))) {
-                  userDB = this.collection.findWhere({
-                    redmineID: u.user.id
-                  });
-                  if (!userDB) {
-                    return this.collection.add({
-                      ativo: false,
-                      redmineID: u.user.id,
-                      nome: `${u.user.firstname} ${u.user.lastname}`
-                    });
-                  }
-                } else {
-                  return console.log(`UID ${id} não encontrado...`);
-                }
-              }).fail((e) => {
-                return console.log(e.responseText);
-              }).always(() => {
-                if (id >= this.fim) {
-                  this.buscando = false;
-                  return this.render();
-                }
-              });
-            })(i));
-          }
-          return results;
-        }
-
-        //******
-        trclick(ev) {
-          var chk, target;
-          target = this.$(ev.target);
-          chk = target.closest("tr").find("input:checkbox");
-          if (chk[0] === target[0]) {
-            return;
-          }
-          chk.prop("checked", !chk.is(":checked"));
-          return chk.trigger("change");
+        trClick(ev) {
+          return helper.trClick.call(this, ev);
         }
 
         chkAtivoChanged(ev) {
-          var chk, id;
+          var chk, id, usuarios;
           chk = this.$(ev.target);
           id = chk.attr("name");
-          return this.collection.get(id).set("ativo", chk.is(":checked"));
+          this.fillModel();
+          this.usuarioRedmineCollection.get(id).set("ativoEquipe", chk.is(":checked"));
+          usuarios = [];
+          this.usuarioRedmineCollection.forEach(function(itm) {
+            if (itm.get("ativoEquipe")) {
+              return usuarios.push(_.pick(itm.toJSON(), "redmineID", "nome"));
+            }
+          });
+          return this.model.set("usuarios", usuarios);
+        }
+
+        fillModel() {
+          return this.model.set("nome", this.$("#input-nome").val());
         }
 
         salvar(ev) {
-          var checks, that;
+          var that;
           ev.preventDefault();
           that = this;
           helper.aguardeBtn.call(this, "#btn-salvar", "Salvar", "Salvar", false);
-          checks = this.$("#frm-usuarios input:checked");
-          if (!checks.length) {
+          this.fillModel();
+          if (_.isEmpty(this.model.get("usuarios"))) {
             helper.aguardeBtn.call(this, "#btn-salvar", "Salvar", "Salvar", true);
             alert("Nenhum usuário selecionado.");
             return;
           }
-          return this.collection.sync("create", this.collection, {
+          return this.model.save(null, {
             success: function(msg) {
               console.log(msg);
               helper.aguardeBtn.call(that, "#btn-salvar", "Salvar", "Salvar", true);
-              return alert("Usuários salvos com sucesso!");
+              return alert("Equipe salva com sucesso!");
             },
             error: function(e) {
               console.log(e);
               helper.aguardeBtn.call(that, "#btn-salvar", "Salvar", "Salvar", true);
-              return alert("Houve um erro ao salvar usuários!/r/nConsulte o log.");
+              return alert("Houve um erro ao salvar equipe!/r/nConsulte o log.");
             }
           });
         }
 
       };
 
-      ImportUsuariosRedmineView.prototype.el = ".mid-container";
+      EquipeCadastroView.prototype.el = ".mid-container";
 
-      ImportUsuariosRedmineView.prototype.template = _.template(template);
+      EquipeCadastroView.prototype.template = _.template(template);
 
-      ImportUsuariosRedmineView.prototype.events = {
-        "click #btn-buscar": "buscar",
+      EquipeCadastroView.prototype.events = {
         "click #btn-salvar": "salvar",
-        "click #frm-usuarios tbody tr": "trclick",
+        "click #frm-usuarios tbody tr": "trClick",
         "change .chk-usuario": "chkAtivoChanged"
       };
 
-      return ImportUsuariosRedmineView;
+      return EquipeCadastroView;
 
     }).call(this);
-    return module.exports = ImportUsuariosRedmineView;
+    return module.exports = EquipeCadastroView;
   });
 
 }).call(this);

@@ -1,12 +1,12 @@
 (function() {
   define(function(require, exports, module) {
-    var $, Backbone, SprintCadastroView, UsuarioRedmineCollection, _, helper, sprintModel, template;
+    var $, Backbone, EquipeCollection, SprintCadastroView, _, helper, sprintModel, template;
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
     template = require("text!templates/sprintCadastro.html");
     sprintModel = require("models/sprintModel");
-    UsuarioRedmineCollection = require("models/usuarioRedmineCollection");
+    EquipeCollection = require("models/equipeCollection");
     helper = require("helpers/helper");
     require("bootstrap");
     SprintCadastroView = (function() {
@@ -24,28 +24,30 @@
             chamadosNaoPlanejados: []
           });
           this.model.on("change", this.render, this);
-          this.usuarioRedmineCollection = new UsuarioRedmineCollection;
+          this.equipeCollection = new EquipeCollection;
           this.chamadosBuscaCollection = new Backbone.Collection;
           this.chamadosBuscaCollection.on("add remove", this.render, this);
           this.render();
-          this.usuarioRedmineCollection.fetch({
-            data: {
-              ativo: true
-            },
-            success: (collection, response) => {
+          this.fetchEquipe();
+          return this;
+        }
+
+        fetchEquipe() {
+          return this.equipeCollection.fetch({
+            success: (equipes) => {
               if (this.options.sprintID) {
                 this.model.set({
                   "_id": this.options.sprintID
                 });
                 return this.model.fetch({
                   success: (sprint) => {
-                    this.usuarioRedmineCollection.forEach(function(mdl) {
-                      if (_.some(sprint.get("usuarios"), function(rID) {
-                        return rID === mdl.get("redmineID");
-                      })) {
-                        return mdl.set("ativoSprint", true);
-                      }
-                    });
+                    var equipe;
+                    equipe = equipes.get(sprint.get("equipeID"));
+                    if (equipe != null) {
+                      this.usuariosEquipe = equipe.get("usuarios");
+                    } else {
+                      this.usuariosEquipe = equipes.at(0).get("usuarios");
+                    }
                     return this.render();
                   },
                   error: function(e) {
@@ -54,28 +56,50 @@
                   }
                 });
               } else {
-                this.usuarioRedmineCollection.forEach(function(mdl) {
-                  return mdl.set("ativoSprint", true);
-                });
+                this.usuariosEquipe = equipes.at(0).get("usuarios");
                 return this.render();
               }
             },
             error: function(e) {
               console.log(e);
-              return alert("Houve um erro ao importar usuários!/r/nConsulte o log.");
+              return alert("Houve um erro ao buscar equipes!/r/nConsulte o log.");
             }
           });
-          return this;
         }
 
         render() {
-          var modelObj;
-          modelObj = this.model.toJSON();
-          modelObj.usuarios = this.usuarioRedmineCollection.toJSON();
-          modelObj.chamadosPlanejados = this.chamadosBuscaCollection.toJSON();
-          $(this.el).html(this.template(modelObj));
+          $(this.el).html(this.template({
+            model: this.model.toJSON(),
+            equipes: this.equipeCollection.toJSON(),
+            usuariosEquipe: this.usuariosEquipe || [],
+            chamadosPlanejados: this.chamadosBuscaCollection.toJSON()
+          }));
           helper.aguardeBtn.call(this, "#btn-buscar", "Buscar", "Buscando...", !this.buscando);
           return this;
+        }
+
+        alterarEquipe(e) {
+          this.fillModel();
+          return this.render();
+        }
+
+        fillModel() {
+          var chamadosPlanejadosTxt, equipeID, fim, inicio, nome;
+          equipeID = this.$("#select-equipe").val();
+          chamadosPlanejadosTxt = this.$("#txt-chamados").val();
+          nome = this.$("#input-nome").val();
+          inicio = this.$("#input-inicio").val();
+          fim = this.$("#input-fim").val();
+          this.usuariosEquipe = this.equipeCollection.get(equipeID).get("usuarios");
+          return this.model.set({
+            equipeID: equipeID,
+            usuarios: _.pluck(this.usuariosEquipe, "redmineID"),
+            nome: nome,
+            chamadosPlanejadosTxt: chamadosPlanejadosTxt,
+            chamadosPlanejados: [],
+            inicio: inicio,
+            fim: fim
+          });
         }
 
         buscarIssues(ev) {
@@ -120,36 +144,13 @@
         }
 
         submit(ev) {
-          var chamadosPlanejadosTxt, fim, inicio, nome, usuarios, usuariosChk;
           ev.preventDefault();
-          usuariosChk = this.$("#frm-sprint #tbl-usuarios input:checked");
-          if (!usuariosChk.length) {
-            helper.aguardeBtn.call(this, "#btn-salvar", "Salvar", "Salvando...", true);
-            alert("Nenhum usuário selecionado.");
-            return;
-          }
-          // chamadosChk = @$ "#frm-sprint #tbl-chamados input:checked"
-          // unless chamadosChk.length
+          // usuariosChk = @$ "#frm-sprint #tbl-usuarios input:checked"
+          // unless usuariosChk.length
           //   helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvando...", true
-          //   alert "Nenhum chamado selecionado."
+          //   alert "Nenhum usuário selecionado."
           //   return
-          usuarios = _.map(usuariosChk, (el) => {
-            return this.usuarioRedmineCollection.get($(el).val()).toJSON();
-          });
-          // chamadosPlanejados = _.map chamadosChk, (el)=> @chamadosBuscaCollection.get(parseInt($(el).val())).toJSON()
-          chamadosPlanejadosTxt = this.$("#txt-chamados").val();
-          nome = this.$("#input-nome").val();
-          inicio = this.$("#input-inicio").val();
-          fim = this.$("#input-fim").val();
-          this.model.set({
-            usuarios: _.pluck(usuarios, "redmineID"),
-            nome: nome,
-            chamadosPlanejadosTxt: chamadosPlanejadosTxt,
-            // chamadosPlanejados: chamadosPlanejados
-            chamadosPlanejados: [],
-            inicio: inicio,
-            fim: fim
-          });
+          this.fillModel();
           this.model.save(null, {
             success: function(mdl) {
               return alert("Sprint salva com sucesso!");
@@ -169,7 +170,8 @@
 
       SprintCadastroView.prototype.events = {
         "submit #frm-sprint": "submit",
-        "click #btn-buscar": "buscarIssues"
+        "click #btn-buscar": "buscarIssues",
+        "change #select-equipe": "alterarEquipe"
       };
 
       return SprintCadastroView;

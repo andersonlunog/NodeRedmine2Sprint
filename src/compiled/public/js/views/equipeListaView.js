@@ -1,16 +1,16 @@
 (function() {
   define(function(require, exports, module) {
-    var $, Backbone, EquipeListaView, SprintCollection, _, template;
+    var $, Backbone, EquipeCollection, EquipeListaView, _, template;
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
     template = require("text!templates/equipeLista.html");
-    SprintCollection = require("models/sprintCollection");
+    EquipeCollection = require("models/equipeCollection");
     require("bootstrap");
     EquipeListaView = (function() {
       class EquipeListaView extends Backbone.View {
         initialize() {
-          this.collection = new SprintCollection;
+          this.collection = new EquipeCollection;
           this.collection.fetch({
             success: (collection, response) => {
               this.collection.reset(response);
@@ -27,7 +27,7 @@
         render() {
           var that;
           this.$el.html(this.template({
-            sprints: this.collection.models
+            equipes: this.collection.toJSON()
           }));
           that = this;
           $(".btn-delete").click(function() {

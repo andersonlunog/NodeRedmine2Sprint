@@ -1,10 +1,11 @@
 <div class="container">
-  <h2>Definir Equipe</h2>
+  <h2>Importar Usuários do Redmine</h2>
   <hr>
   <form id="frm-usuarios">
     <table class="table table-hover">
       <thead>
         <tr>
+          <th>Ativo</th>
           <th>ID</th>
           <th>Nome</th>
         </tr>
@@ -12,6 +13,7 @@
       <tbody>
         <%_.each(usuarios, function(usuario) { %>
         <tr>
+          <td><input type="checkbox" class="chk-usuario" name="<%= usuario.cid %>" <%= usuario.attributes.ativo ? "checked" : "" %>></td>
           <td><%= usuario.attributes.redmineID %></td>
           <td><%= usuario.attributes.nome %></td>
           <td></td>

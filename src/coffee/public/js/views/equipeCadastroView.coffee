@@ -3,30 +3,46 @@ define (require, exports, module) ->
   _ = require "underscore"
   $ = require "jquery"
   Backbone = require "backbone"
-  template = require "text!templates/importUsuariosRedmine.html"  
+  template = require "text!templates/equipeCadastro.html"  
   UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
+  EquipeModel = require "models/equipeModel"
   helper = require "helpers/helper"
   require "bootstrap"
 
-  class ImportUsuariosRedmineView extends Backbone.View
+  class EquipeCadastroView extends Backbone.View
     el: ".mid-container"
 
     template: _.template template
 
     events:
-      "click #btn-buscar": "buscar"
       "click #btn-salvar": "salvar"
-      "click #frm-usuarios tbody tr": "trclick"
+      "click #frm-usuarios tbody tr": "trClick"
       "change .chk-usuario": "chkAtivoChanged"
 
-    initialize: ->
-      @inicio = 50
-      @fim = 60
-      @collection = new UsuarioRedmineCollection
+    initialize: (@options)->
+      @usuarioRedmineCollection = new UsuarioRedmineCollection
+      @model = new EquipeModel
       @render()
-      @collection.on "add remove reset change", @render, @
+      @listenTo @model, "change", @render
 
-      @collection.fetch
+      @usuarioRedmineCollection.fetch
+        data:
+          ativo: true
+        success: (usuarios)=>
+          if @options.equipeID
+            @model.set "_id": @options.equipeID
+            @model.fetch
+              success: (equipe) =>
+                usuarios.forEach (mdl)->
+                  mdl.set("ativoEquipe", true) if _.some equipe.get("usuarios"), (u)-> u.redmineID == mdl.get("redmineID")
+                @render()
+              error: (e)->
+                console.log e
+                alert "Houve um erro ao buscar a equipe!/r/nConsulte o log."
+          else
+            @usuarioRedmineCollection.forEach (mdl)->
+              mdl.set "ativoEquipe", false
+            @render()
         error: (e) =>
           console.log e
           alert "Houve um erro ao buscar usuários!/r/nConsulte o log."
@@ -34,75 +50,43 @@ define (require, exports, module) ->
 
     render: ->
       @$el.html @template 
-        usuarios : @collection.models
-        buscando: @buscando
-        inicio: @inicio
-        fim: @fim
-
-      helper.aguardeBtn.call @,"#btn-buscar", "Buscar", "Buscando...", !@buscando
-      helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Buscando...", !@buscando
-
+        usuariosRedmine : @usuarioRedmineCollection.toJSON()
+        model: @model.toJSON()
       @
 
-    buscar: (ev)->
-      ev.preventDefault()
-      @inicio = parseInt $("#input-inicio").val()
-      @fim = parseInt $("#input-fim").val()
-      console.log "Buscando os usuário de #{@inicio} a #{@fim}"
-      @buscando = true
-
-      #*******
-      for i in [@inicio..@fim]
-        ((id)=>
-          $.get "/buscarRedmine?id=#{id}", (u)=>
-            unless _.isEmpty(u) or _.isEmpty(u.user)
-              userDB = @collection.findWhere redmineID: u.user.id
-              unless userDB
-                @collection.add
-                  ativo: false
-                  redmineID: u.user.id
-                  nome: "#{u.user.firstname} #{u.user.lastname}"
-            else
-              console.log "UID #{id} não encontrado..."
-          .fail (e)=>
-            console.log e.responseText
-          .always ()=>
-            if id >= @fim
-              @buscando = false
-              @render()
-        )(i)
-      #******
-
-    trclick: (ev)->
-      target = @$(ev.target)
-      chk = target.closest("tr").find("input:checkbox")
-      return if chk[0] is target[0]
-      chk.prop("checked", !chk.is(":checked"))
-      chk.trigger "change"
+    trClick: (ev)->
+      helper.trClick.call @, ev
 
     chkAtivoChanged: (ev)->
       chk = @$(ev.target)
       id = chk.attr("name")
-      @collection.get(id).set "ativo", chk.is(":checked")
+      @fillModel()
+      @usuarioRedmineCollection.get(id).set "ativoEquipe", chk.is(":checked")
+      usuarios = []
+      @usuarioRedmineCollection.forEach (itm)-> usuarios.push(_.pick(itm.toJSON(), "redmineID", "nome")) if itm.get("ativoEquipe")
+      @model.set "usuarios", usuarios
+
+    fillModel: ->
+      @model.set "nome", @$("#input-nome").val()
 
     salvar: (ev)->
       ev.preventDefault()
       that = @
       helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvar", false
-      checks = @$ "#frm-usuarios input:checked"
-      unless checks.length
+      @fillModel()
+      if _.isEmpty @model.get "usuarios"
         helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvar", true
         alert "Nenhum usuário selecionado."
         return
 
-      @collection.sync "create", @collection,
+      @model.save null,
         success: (msg)->
           console.log msg
           helper.aguardeBtn.call that, "#btn-salvar", "Salvar", "Salvar", true
-          alert "Usuários salvos com sucesso!"
+          alert "Equipe salva com sucesso!"
         error: (e)->
           console.log e
           helper.aguardeBtn.call that, "#btn-salvar", "Salvar", "Salvar", true
-          alert "Houve um erro ao salvar usuários!/r/nConsulte o log."
+          alert "Houve um erro ao salvar equipe!/r/nConsulte o log."
 
-  module.exports = ImportUsuariosRedmineView
+  module.exports = EquipeCadastroView

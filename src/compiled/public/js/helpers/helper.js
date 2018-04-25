@@ -18,6 +18,16 @@
         return this.$(`${btnSel}`).html(labelDisabled).attr("disabled", true).append(" <span class=\"glyphicon glyphicon-refresh\" aria-hidden=\"true\"></span>");
       }
     };
+    exports.trClick = function(e) {
+      var chk, target;
+      target = this.$(e.target);
+      chk = target.closest("tr").find("input:checkbox");
+      if (chk[0] === target[0]) {
+        return;
+      }
+      chk.prop("checked", !chk.is(":checked"));
+      return chk.trigger("change");
+    };
   });
 
 }).call(this);

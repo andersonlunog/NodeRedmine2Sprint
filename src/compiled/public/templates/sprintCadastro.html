@@ -2,43 +2,49 @@
   <form id="frm-sprint">
     <div class="form-group">
       <label class="control-label" for="input-nome">Nome</label>
-      <input type="text" class="form-control" id="input-nome" name="nome" placeholder="Nome" value="<%= nome %>">
+      <input type="text" class="form-control" id="input-nome" name="nome" placeholder="Nome" value="<%= model.nome %>">
     </div>
     <div class="row">
       <div class="col-md-6">
         <div class="form-group">
           <label class="control-label" for="input-inicio">Início</label>
-          <input type="date" class="form-control" id="input-inicio" name="inicio" value="<%= inicio %>" placeholder="Início" value="">
+          <input type="date" class="form-control" id="input-inicio" name="inicio" value="<%= model.inicio %>" placeholder="Início" value="">
         </div>
       </div>
       <div class="col-md-6">
         <div class="form-group">
           <label class="control-label" for="input-fim">Fim</label>
-          <input type="date" class="form-control" id="input-fim" name="fim" value="<%= fim %>" placeholder="Fim" value="">
+          <input type="date" class="form-control" id="input-fim" name="fim" value="<%= model.fim %>" placeholder="Fim" value="">
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="control-label" for="select-equipe">Equipe</label>
+          <select class="form-control" id="select-equipe">
+            <% _.each(equipes, function(equipe) { %>
+            <option value="<%= equipe._id %>" <%= equipe._id == model.equipeID ? "selected": "" %>><%= equipe.nome %></option>
+            <%})%>
+          </select>
         </div>
       </div>
     </div>
     <table class="table table-hover" id="tbl-usuarios">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Nome</th>
+          <th>Usuário</th>
         </tr>
       </thead>
       <tbody>
-        <% _.each(usuarios, function(usuario) { %>
+        <% _.each(usuariosEquipe, function(usuario) { %>
         <tr>
-          <td><input type="checkbox" name="usuarioID" value="<%= usuario._id %>" <%= usuario.ativoSprint ? "checked" : "" %>></td>
           <td><%= usuario.nome %></td>
-          <td></td>
         </tr>
         <%})%>
       </tbody>
     </table>
-
     <div class="form-group">
       <label class="control-label" for="txt-chamados">Chamados planejados</label>
-      <textarea class="form-control" id="txt-chamados" name="chamadosTxt"><%= chamadosPlanejadosTxt %></textarea>
+      <textarea class="form-control" id="txt-chamados" name="chamadosTxt"><%= model.chamadosPlanejadosTxt %></textarea>
     </div>
     <button id="btn-buscar" type="submit" class="btn btn-primary">Buscar</button>
 

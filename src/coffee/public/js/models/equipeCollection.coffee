@@ -1,10 +1,10 @@
 define ["underscore"
   "backbone"
   "collection"
-  "models/usuarioRedmineModel"
-], (_, Backbone, BaseCollection, UsuarioRedmineModel) ->
-  class UsuarioRedmineCollection extends BaseCollection
-    model: UsuarioRedmineModel
-    url: "/usuariosRedmine"
+  "models/equipeModel"
+], (_, Backbone, BaseCollection, EquipeModel) ->
+  class EquipeCollection extends BaseCollection
+    model: EquipeModel
+    url: "/equipes"
 
-  UsuarioRedmineCollection
+  EquipeCollection

@@ -1,17 +1,17 @@
 (function() {
-  define(["underscore", "backbone", "collection", "models/usuarioRedmineModel"], function(_, Backbone, BaseCollection, UsuarioRedmineModel) {
-    var UsuarioRedmineCollection;
-    UsuarioRedmineCollection = (function() {
-      class UsuarioRedmineCollection extends BaseCollection {};
+  define(["underscore", "backbone", "collection", "models/equipeModel"], function(_, Backbone, BaseCollection, EquipeModel) {
+    var EquipeCollection;
+    EquipeCollection = (function() {
+      class EquipeCollection extends BaseCollection {};
 
-      UsuarioRedmineCollection.prototype.model = UsuarioRedmineModel;
+      EquipeCollection.prototype.model = EquipeModel;
 
-      UsuarioRedmineCollection.prototype.url = "/usuariosRedmine";
+      EquipeCollection.prototype.url = "/equipes";
 
-      return UsuarioRedmineCollection;
+      return EquipeCollection;
 
     }).call(this);
-    return UsuarioRedmineCollection;
+    return EquipeCollection;
   });
 
 }).call(this);

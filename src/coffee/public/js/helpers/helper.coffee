@@ -15,4 +15,11 @@ define (require, exports, module) ->
     else
       @$("#{btnSel}").html(labelDisabled).attr("disabled", true).append """ <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>"""
 
+  exports.trClick = (e)->
+    target = @$(e.target)
+    chk = target.closest("tr").find("input:checkbox")
+    return if chk[0] is target[0]
+    chk.prop("checked", !chk.is(":checked"))
+    chk.trigger "change"
+
   return

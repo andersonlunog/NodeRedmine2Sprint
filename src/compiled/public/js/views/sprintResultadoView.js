@@ -50,7 +50,6 @@
                 return this.resultModel.fetch({
                   success: (sprintResult) => {
                     this.lancamentosCollection.reset(sprintResult.get("lancamentos"));
-                    this.render();
                     return this.consolidaDados();
                   },
                   // @buscaLancamentosHoras sprint.get("usuarios"), sprint.get("inicio"), sprint.get("fim")
@@ -109,49 +108,63 @@
         }
 
         buscaLancamentosHoras(usuarios, inicio, fim) {
+          var promLancam;
           this.buscando = true;
-          this.lancamentosCollection.reset([]);
           helper.aguardeBtn.call(this, "#btn-atualizar-tudo", "Atualizar Tudo", "Atualizando...", !this.buscando);
-          return usuarios.forEach((id, i, arr) => {
-            return $.get(`/timeentries?user=${id}&inicio=${inicio}&fim=${fim}`, (lancamento) => {
-              var buscandoIssue;
+          promLancam = [];
+          usuarios.forEach((id, i, arr) => {
+            return promLancam.push(this.getLancamentos(id, inicio, fim));
+          });
+          return Promise.all(promLancam).then((lancamentos) => {
+            this.lancamentosCollection.reset(_.without(_.flatten(lancamentos), void 0));
+            this.resultModel.set("lancamentos", this.lancamentosCollection.toJSON());
+            console.log(`Acabou... ${this.lancamentosCollection.length}`);
+            this.salvar();
+            this.buscando = false;
+            return this.consolidaDados();
+          });
+        }
+
+        getLancamentos(userID, inicio, fim) {
+          return new Promise((resolve, reject) => {
+            return $.get(`/timeentries?user=${userID}&inicio=${inicio}&fim=${fim}`, (lancamento) => {
+              var promIssues;
               if (!(_.isEmpty(lancamento) || _.isEmpty(lancamento.time_entries))) {
-                buscandoIssue = true;
-                return lancamento.time_entries.forEach((time, j) => {
-                  return this.getIssue(time.issue.id, (issue) => {
-                    time.issue = issue;
-                    console.log(time);
-                    this.lancamentosCollection.add(time);
-                    return this.resultModel.set("lancamentos", this.lancamentosCollection.toJSON());
-                  }, () => {
-                    if (j >= lancamento.time_entries.length - 1 && i >= usuarios.length - 1) {
-                      console.log(`Acabou... ${this.lancamentosCollection.length}`);
-                      this.buscando = false;
-                      this.render();
-                      return this.consolidaDados();
-                    }
+                promIssues = [];
+                lancamento.time_entries.forEach((time) => {
+                  return promIssues.push(this.getIssue(time.issue.id));
+                });
+                return Promise.all(promIssues).then((issues) => {
+                  issues.forEach((issue, j) => {
+                    return console.log(lancamento.time_entries[j].issue = issue);
                   });
+                  return resolve(lancamento.time_entries);
                 });
               } else {
-                return console.log(`Usuário ${id} sem lançamentos...`);
+                console.log(`Usuário ${userID} sem lançamentos...`);
+                return resolve();
               }
             }).fail((e) => {
-              return console.log(e);
+              console.log(e);
+              return reject(e);
             });
           });
         }
 
-        getIssue(issueID, callback, alwaysCb) {
-          return $.get(`/redmine/issue?id=${issueID}`, (issue) => {
-            if (!(_.isEmpty(issue) || _.isEmpty(issue.issues))) {
-              return callback(issue.issues[0]);
-            } else {
-              return console.log(`Chamado ${issueID} não encontrado...`);
-            }
-          }).fail((e) => {
-            return console.log(e);
-          }).always(() => {
-            return typeof alwaysCb === "function" ? alwaysCb() : void 0;
+        getIssue(issueID) {
+          return new Promise((resolve, reject) => {
+            return $.get(`/redmine/issue?id=${issueID}`, (issue) => {
+              var e;
+              if (!(_.isEmpty(issue) || _.isEmpty(issue.issues))) {
+                return resolve(issue.issues[0]);
+              } else {
+                console.log(e = `Chamado ${issueID} não encontrado...`);
+                return reject(e);
+              }
+            }).fail((e) => {
+              console.log(e);
+              return reject(e);
+            });
           });
         }
 
@@ -234,16 +247,16 @@
           this.render();
           this.renderGraficoUsuarioHoraDia();
           this.renderGraficosUsuarios();
-          if (this.graficoPizza == null) {
-            return this.renderGraficoTotais(this.horaOrigem);
-          }
+          return this.renderGraficoTotais(this.horaOrigem);
         }
 
-        salvar(ev) {
-          ev.preventDefault();
+        salvar(e) {
+          if (e != null) {
+            e.preventDefault();
+          }
           return this.resultModel.save(null, {
             success: function(mdl) {
-              return alert("Resultado salvo com sucesso!");
+              return alert("Resultado atualizado com sucesso!");
             },
             error: function(err) {
               console.log(err);
@@ -384,7 +397,7 @@
       SprintResultadoView.prototype.template = _.template(template);
 
       SprintResultadoView.prototype.events = {
-        "click #btn-salvar": "salvar",
+        // "click #btn-salvar": "salvar"
         "click #btn-atualizar-tudo": "atualizarTudo",
         "change .radio-grafico": "alterarGrafico"
       };

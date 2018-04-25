@@ -15,14 +15,6 @@
   };
 
   module.exports = function(app) {
-    app.get("/sprints", function(req, res) {
-      return SprintModel.find({}, function(err, sprints) {
-        if (err) {
-          return res.status(400).send(err);
-        }
-        return res.send(sprints);
-      });
-    });
     app.get('/redmine/issuetime', function(req, res) {
       var params;
       params = req.query;
@@ -70,6 +62,16 @@
     //   res.render 'redmine.ejs', {issues: [data.issue], issuesList: issuesList}
     // , (err) ->
     //   res.render 'redmine.ejs', message: err  
+
+    //### SPRINT
+    app.get("/sprints", function(req, res) {
+      return SprintModel.find({}, "nome inicio fim equipeID", function(err, sprints) {
+        if (err) {
+          return res.status(400).send(err);
+        }
+        return res.send(sprints);
+      });
+    });
     app.get("/sprint/:id", function(req, res) {
       return SprintModel.findById(req.params.id, function(err, sprint) {
         if (err) {

@@ -23,6 +23,15 @@
         },
         "import-usuarios": function() {
           return Backbone.Events.trigger("view:importUsuariosRedmine");
+        },
+        "equipes": function() {
+          return Backbone.Events.trigger("view:equipeLista");
+        },
+        "equipe": function() {
+          return Backbone.Events.trigger("view:equipeCadastro");
+        },
+        "equipe/:id": function(id) {
+          return Backbone.Events.trigger("view:equipeCadastro", id);
         }
       };
 

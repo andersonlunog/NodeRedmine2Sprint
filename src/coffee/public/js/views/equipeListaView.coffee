@@ -4,7 +4,7 @@ define (require, exports, module) ->
   $ = require "jquery"
   Backbone = require "backbone"
   template = require "text!templates/equipeLista.html"
-  SprintCollection = require "models/sprintCollection"
+  EquipeCollection = require "models/equipeCollection"
   require "bootstrap"
 
   class EquipeListaView extends Backbone.View
@@ -13,7 +13,7 @@ define (require, exports, module) ->
     template: _.template template
 
     initialize: ->
-      @collection = new SprintCollection
+      @collection = new EquipeCollection
       @collection.fetch
         success: (collection, response) =>
           @collection.reset response
@@ -25,7 +25,7 @@ define (require, exports, module) ->
       @
 
     render: ->
-      @$el.html @template sprints : @collection.models
+      @$el.html @template equipes : @collection.toJSON()
 
       that = @
       $(".btn-delete").click ()->

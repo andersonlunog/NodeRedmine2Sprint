@@ -1,5 +1,6 @@
 redmine = require('../business/redmine')()
 UsuarioRedmine = require('../models/usuarioRedmine')
+EquipeModel = require('../models/equipe')
 
 # https = require "https"
 # environment = require('../config/environment')()
@@ -64,5 +65,38 @@ module.exports = (app) ->
       #       return done(err)
       #     done null, newUser
       # return
-    
+  
+  #### EQUIPE
+
+  app.get "/equipes", (req, res) ->
+    EquipeModel.find {}, (err, equipes) ->
+      return res.status(400).send(err) if err
+      res.send equipes
+
+  app.get "/equipe/:id", (req, res) ->
+    EquipeModel.findById req.params.id, (err, equipe) ->
+      return res.status(400).send(err) if err
+      res.send equipe or {}
+
+  app.post "/equipe", (req, res) ->
+    equipe = req.body
+    newEquipe = new EquipeModel equipe
+    newEquipe.save (err)->
+      if err
+        console.log "Houve um erro ao salvar equipe #{equipe.nome}"
+        res.status(400).send err
+      console.log "Equipe salva #{equipe.nome}"
+      res.send newEquipe
+
+  app.put "/equipe/:id", (req, res) ->
+    EquipeModel.findById req.params.id, (err, equipe) ->
+      return res.status(400).send(err) if err
+      equipe.set req.body
+      equipe.save (err, uEquipe)->
+        if err
+          console.log "Houve um erro ao atualizar equipe #{equipe.nome}"
+          res.status(400).send err
+        console.log "Equipe atualizada #{equipe.nome}"
+        res.send uEquipe
+
   return

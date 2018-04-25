@@ -5,6 +5,7 @@ sprintSchema = new Schema
   nome: String
   inicio: String
   fim: String
+  equipeID: Schema.Types.ObjectId
   usuarios: Array
     # redmineID: Number
     # horasPorDia: Number

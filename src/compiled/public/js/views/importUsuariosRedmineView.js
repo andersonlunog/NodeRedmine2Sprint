@@ -56,6 +56,7 @@
                   });
                   if (!userDB) {
                     return this.collection.add({
+                      ativo: true,
                       redmineID: u.user.id,
                       nome: `${u.user.firstname} ${u.user.lastname}`
                     });
@@ -77,6 +78,24 @@
         }
 
         //******
+        trclick(ev) {
+          var chk, target;
+          target = this.$(ev.target);
+          chk = target.closest("tr").find("input:checkbox");
+          if (chk[0] === target[0]) {
+            return;
+          }
+          chk.prop("checked", !chk.is(":checked"));
+          return chk.trigger("change");
+        }
+
+        chkAtivoChanged(ev) {
+          var chk, id;
+          chk = this.$(ev.target);
+          id = chk.attr("name");
+          return this.collection.get(id).set("ativo", chk.is(":checked"));
+        }
+
         salvar(ev) {
           var checks, that;
           ev.preventDefault();
@@ -110,7 +129,9 @@
 
       ImportUsuariosRedmineView.prototype.events = {
         "click #btn-buscar": "buscar",
-        "click #btn-salvar": "salvar"
+        "click #btn-salvar": "salvar",
+        "click #frm-usuarios tbody tr": "trclick",
+        "change .chk-usuario": "chkAtivoChanged"
       };
 
       return ImportUsuariosRedmineView;

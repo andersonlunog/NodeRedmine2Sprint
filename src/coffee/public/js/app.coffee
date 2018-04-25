@@ -3,13 +3,11 @@ define (require, exports, module) ->
   _ = require "underscore"
   $ = require "jquery"
   Backbone = require "backbone"
-  # ServiceUtil = require "helpers/serviceUtil"
 
   app = {}
   app.views = {}
   app.currentView = null
   app.root = "/"
-  # app.post = ServiceUtil.post
 
   Backbone.Events.on "view:index", -> app.createMainView("home", true)
   
@@ -31,7 +29,11 @@ define (require, exports, module) ->
   Backbone.Events.on "view:importUsuariosRedmine", -> 
     app.createView("importUsuariosRedmine", require("views/importUsuariosRedmineView"))
 
-  # app.createCalculoView = (id)-> createView "calculo.calculo", require("views/calculo/CalculoView"), calculoID: id
+  Backbone.Events.on "view:equipeLista", -> 
+    app.createView("equipeLista", require("views/equipeListaView"))
+
+  Backbone.Events.on "view:equipeCadastro", (id)-> 
+    app.createView("equipeCadastro", require("views/equipeCadastroView"), equipeID: id)
   
   createView = (name, View, options = {}) ->
     __createIndexView()

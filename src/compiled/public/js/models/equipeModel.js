@@ -1,20 +1,20 @@
 (function() {
   define(["underscore", "backbone", "model"], function(_, Backbone, BaseModel) {
-    var UsuarioRedmineModel;
-    UsuarioRedmineModel = (function() {
-      class UsuarioRedmineModel extends BaseModel {};
+    var EquipeModel;
+    EquipeModel = (function() {
+      class EquipeModel extends BaseModel {};
 
-      UsuarioRedmineModel.prototype.defaults = {
-        redmineID: null,
-        nome: ""
+      EquipeModel.prototype.defaults = {
+        nome: "",
+        usuarios: []
       };
 
-      UsuarioRedmineModel.prototype.urlRoot = "/usuarioRedmine";
+      EquipeModel.prototype.urlRoot = "/equipe";
 
-      return UsuarioRedmineModel;
+      return EquipeModel;
 
     }).call(this);
-    return UsuarioRedmineModel;
+    return EquipeModel;
   });
 
 }).call(this);

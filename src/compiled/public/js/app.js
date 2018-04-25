@@ -4,12 +4,10 @@
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
-    // ServiceUtil = require "helpers/serviceUtil"
     app = {};
     app.views = {};
     app.currentView = null;
     app.root = "/";
-    // app.post = ServiceUtil.post
     Backbone.Events.on("view:index", function() {
       return app.createMainView("home", true);
     });
@@ -36,7 +34,14 @@
     Backbone.Events.on("view:importUsuariosRedmine", function() {
       return app.createView("importUsuariosRedmine", require("views/importUsuariosRedmineView"));
     });
-    // app.createCalculoView = (id)-> createView "calculo.calculo", require("views/calculo/CalculoView"), calculoID: id
+    Backbone.Events.on("view:equipeLista", function() {
+      return app.createView("equipeLista", require("views/equipeListaView"));
+    });
+    Backbone.Events.on("view:equipeCadastro", function(id) {
+      return app.createView("equipeCadastro", require("views/equipeCadastroView"), {
+        equipeID: id
+      });
+    });
     createView = function(name, View, options = {}) {
       var view;
       __createIndexView();

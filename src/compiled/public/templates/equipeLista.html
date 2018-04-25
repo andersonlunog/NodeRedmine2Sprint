@@ -10,10 +10,10 @@
       <tbody>
         <% _.each(equipes, function(equipe) { %>
         <tr>
-          <td><%= equipe.attributes.nome %></td>
+          <td><%= equipe.nome %></td>
           <td>
-            <a class="btn btn-mini btn-primary" href="#/equipe/<%= equipe.id %>">Editar</a>
-            <a class="btn btn-mini btn-danger btn-delete" data-id="<%= equipe.id %>">Del</a>
+            <a class="btn btn-mini btn-primary" href="#/equipe/<%= equipe._id %>">Editar</a>
+            <a class="btn btn-mini btn-danger btn-delete" data-id="<%= equipe._id %>">Del</a>
           </td>
         </tr>
         <%})%>

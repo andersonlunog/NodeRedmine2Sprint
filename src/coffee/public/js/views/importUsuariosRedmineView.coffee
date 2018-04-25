@@ -16,6 +16,8 @@ define (require, exports, module) ->
     events:
       "click #btn-buscar": "buscar"
       "click #btn-salvar": "salvar"
+      "click #frm-usuarios tbody tr": "trclick"
+      "change .chk-usuario": "chkAtivoChanged"
 
     initialize: ->
       @inicio = 50
@@ -57,6 +59,7 @@ define (require, exports, module) ->
               userDB = @collection.findWhere redmineID: u.user.id
               unless userDB
                 @collection.add
+                  ativo: true
                   redmineID: u.user.id
                   nome: "#{u.user.firstname} #{u.user.lastname}"
             else
@@ -69,6 +72,18 @@ define (require, exports, module) ->
               @render()
         )(i)
       #******
+
+    trclick: (ev)->
+      target = @$(ev.target)
+      chk = target.closest("tr").find("input:checkbox")
+      return if chk[0] is target[0]
+      chk.prop("checked", !chk.is(":checked"))
+      chk.trigger "change"
+
+    chkAtivoChanged: (ev)->
+      chk = @$(ev.target)
+      id = chk.attr("name")
+      @collection.get(id).set "ativo", chk.is(":checked")
 
     salvar: (ev)->
       ev.preventDefault()

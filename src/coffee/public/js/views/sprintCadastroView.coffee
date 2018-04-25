@@ -5,7 +5,7 @@ define (require, exports, module) ->
   Backbone = require "backbone"
   template = require "text!templates/sprintCadastro.html"
   sprintModel = require "models/sprintModel"
-  UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
+  EquipeCollection = require "models/equipeCollection"
   helper = require "helpers/helper"
   require "bootstrap"
 
@@ -17,6 +17,7 @@ define (require, exports, module) ->
     events:
       "submit #frm-sprint": "submit"
       "click #btn-buscar": "buscarIssues"
+      "change #select-equipe": "alterarEquipe"      
 
     initialize: (@options)->
       @model = new sprintModel
@@ -29,41 +30,67 @@ define (require, exports, module) ->
         chamadosPlanejados: []
         chamadosNaoPlanejados: []
       @model.on "change", @render, @
-      @usuarioRedmineCollection = new UsuarioRedmineCollection
+      @equipeCollection = new EquipeCollection
       @chamadosBuscaCollection = new Backbone.Collection
       @chamadosBuscaCollection.on "add remove", @render, @
-      @render()      
-      @usuarioRedmineCollection.fetch
-        data: 
-          ativo: true
-        success: (collection, response) =>
+      @render()
+      @fetchEquipe()
+      @
+
+    fetchEquipe: () ->
+      @equipeCollection.fetch
+        success: (equipes) =>
           if @options.sprintID
             @model.set "_id": @options.sprintID
             @model.fetch
               success: (sprint) =>
-                @usuarioRedmineCollection.forEach (mdl)->
-                  mdl.set("ativoSprint", true) if _.some sprint.get("usuarios"), (rID)-> rID == mdl.get("redmineID")
+                equipe = equipes.get sprint.get "equipeID"
+                if equipe?
+                  @usuariosEquipe = equipe.get("usuarios")
+                else
+                  @usuariosEquipe = equipes.at(0).get("usuarios")
                 @render()
               error: (e)->
                 console.log e
                 alert "Houve um erro ao buscar a sprint!/r/nConsulte o log."
           else
-            @usuarioRedmineCollection.forEach (mdl)->
-              mdl.set "ativoSprint", true
+            @usuariosEquipe = equipes.at(0).get("usuarios")
             @render()
         error: (e) ->
           console.log e
-          alert "Houve um erro ao importar usuários!/r/nConsulte o log."
-      @
+          alert "Houve um erro ao buscar equipes!/r/nConsulte o log."
 
     render: ->
-      modelObj = @model.toJSON()
-      modelObj.usuarios = @usuarioRedmineCollection.toJSON()
-      modelObj.chamadosPlanejados = @chamadosBuscaCollection.toJSON()
-      $(@el).html @template modelObj
+      $(@el).html @template
+        model: @model.toJSON()
+        equipes: @equipeCollection.toJSON()
+        usuariosEquipe: @usuariosEquipe or []
+        chamadosPlanejados: @chamadosBuscaCollection.toJSON()
 
       helper.aguardeBtn.call @, "#btn-buscar", "Buscar", "Buscando...", !@buscando
       @
+
+    alterarEquipe: (e)->
+      @fillModel()
+      @render()
+
+    fillModel: ()->
+      equipeID = @$("#select-equipe").val()
+      chamadosPlanejadosTxt = @$("#txt-chamados").val()
+      nome = @$("#input-nome").val()
+      inicio = @$("#input-inicio").val()
+      fim = @$("#input-fim").val()
+
+      @usuariosEquipe = @equipeCollection.get(equipeID).get("usuarios")
+
+      @model.set
+        equipeID: equipeID
+        usuarios: _.pluck @usuariosEquipe, "redmineID"
+        nome: nome
+        chamadosPlanejadosTxt: chamadosPlanejadosTxt
+        chamadosPlanejados: []
+        inicio: inicio
+        fim: fim
 
     buscarIssues: (ev)->
       ev.preventDefault()
@@ -102,33 +129,13 @@ define (require, exports, module) ->
     submit: (ev) ->
       ev.preventDefault()
 
-      usuariosChk = @$ "#frm-sprint #tbl-usuarios input:checked"
-      unless usuariosChk.length
-        helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvando...", true
-        alert "Nenhum usuário selecionado."
-        return
-
-      # chamadosChk = @$ "#frm-sprint #tbl-chamados input:checked"
-      # unless chamadosChk.length
+      # usuariosChk = @$ "#frm-sprint #tbl-usuarios input:checked"
+      # unless usuariosChk.length
       #   helper.aguardeBtn.call @, "#btn-salvar", "Salvar", "Salvando...", true
-      #   alert "Nenhum chamado selecionado."
+      #   alert "Nenhum usuário selecionado."
       #   return
 
-      usuarios = _.map usuariosChk, (el)=> @usuarioRedmineCollection.get($(el).val()).toJSON()
-      # chamadosPlanejados = _.map chamadosChk, (el)=> @chamadosBuscaCollection.get(parseInt($(el).val())).toJSON()
-      chamadosPlanejadosTxt = @$("#txt-chamados").val()
-      nome = @$("#input-nome").val()
-      inicio = @$("#input-inicio").val()
-      fim = @$("#input-fim").val()
-
-      @model.set
-        usuarios: _.pluck usuarios, "redmineID"
-        nome: nome
-        chamadosPlanejadosTxt: chamadosPlanejadosTxt
-        # chamadosPlanejados: chamadosPlanejados
-        chamadosPlanejados: []
-        inicio: inicio
-        fim: fim
+      @fillModel()
 
       @model.save null,
         success: (mdl)->

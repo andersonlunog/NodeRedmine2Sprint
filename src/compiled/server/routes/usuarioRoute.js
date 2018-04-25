@@ -1,9 +1,11 @@
 (function() {
-  var UsuarioRedmine, redmine;
+  var EquipeModel, UsuarioRedmine, redmine;
 
   redmine = require('../business/redmine')();
 
   UsuarioRedmine = require('../models/usuarioRedmine');
+
+  EquipeModel = require('../models/equipe');
 
   // https = require "https"
   // environment = require('../config/environment')()
@@ -76,16 +78,62 @@
         });
       });
     });
-  };
+    
+    //   newUser = new User
+    //   newUser.email = email
+    //   newUser.password = newUser.generateHash(password)
+    //   newUser.save (err) ->
+    //     if err
+    //       return done(err)
+    //     done null, newUser
+    // return
 
-  
-//   newUser = new User
-//   newUser.email = email
-//   newUser.password = newUser.generateHash(password)
-//   newUser.save (err) ->
-//     if err
-//       return done(err)
-//     done null, newUser
-// return
+    //### EQUIPE
+    app.get("/equipes", function(req, res) {
+      return EquipeModel.find({}, function(err, equipes) {
+        if (err) {
+          return res.status(400).send(err);
+        }
+        return res.send(equipes);
+      });
+    });
+    app.get("/equipe/:id", function(req, res) {
+      return EquipeModel.findById(req.params.id, function(err, equipe) {
+        if (err) {
+          return res.status(400).send(err);
+        }
+        return res.send(equipe || {});
+      });
+    });
+    app.post("/equipe", function(req, res) {
+      var equipe, newEquipe;
+      equipe = req.body;
+      newEquipe = new EquipeModel(equipe);
+      return newEquipe.save(function(err) {
+        if (err) {
+          console.log(`Houve um erro ao salvar equipe ${equipe.nome}`);
+          res.status(400).send(err);
+        }
+        console.log(`Equipe salva ${equipe.nome}`);
+        return res.send(newEquipe);
+      });
+    });
+    app.put("/equipe/:id", function(req, res) {
+      return EquipeModel.findById(req.params.id, function(err, equipe) {
+        if (err) {
+          return res.status(400).send(err);
+        }
+        equipe.set(req.body);
+        return equipe.save(function(err, uEquipe) {
+          if (err) {
+            console.log(`Houve um erro ao atualizar equipe ${equipe.nome}`);
+            res.status(400).send(err);
+          }
+          console.log(`Equipe atualizada ${equipe.nome}`);
+          return res.send(uEquipe);
+        });
+      });
+    });
+  };
 
 }).call(this);

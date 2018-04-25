@@ -2,10 +2,10 @@ define ["underscore"
   "backbone"
   "model"
 ], (_, Backbone, BaseModel) ->
-  class UsuarioRedmineModel extends BaseModel
+  class EquipeModel extends BaseModel
     defaults:
-      redmineID: null
       nome: ""
-    urlRoot: "/usuarioRedmine"
+      usuarios: []
+    urlRoot: "/equipe"
   
-  UsuarioRedmineModel
+  EquipeModel

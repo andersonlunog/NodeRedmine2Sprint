@@ -9,10 +9,6 @@ isLoggedIn = (req, res, next) ->
   return
 
 module.exports = (app) ->
-  app.get "/sprints", (req, res) ->
-    SprintModel.find {}, (err, sprints) ->
-      return res.status(400).send(err) if err
-      res.send sprints
 
   app.get '/redmine/issuetime', (req, res) ->
     params = req.query
@@ -55,6 +51,13 @@ module.exports = (app) ->
     # , (err) ->
     #   res.render 'redmine.ejs', message: err  
   
+  #### SPRINT
+
+  app.get "/sprints", (req, res) ->
+    SprintModel.find {}, "nome inicio fim equipeID", (err, sprints) ->
+      return res.status(400).send(err) if err
+      res.send sprints
+
   app.get "/sprint/:id", (req, res) ->
     SprintModel.findById req.params.id, (err, sprint) ->
       return res.status(400).send(err) if err

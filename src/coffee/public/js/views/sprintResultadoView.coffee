@@ -17,7 +17,7 @@ define (require, exports, module) ->
     template: _.template template
 
     events:
-      "click #btn-salvar": "salvar"
+      # "click #btn-salvar": "salvar"
       "click #btn-atualizar-tudo": "atualizarTudo"
       "change .radio-grafico": "alterarGrafico"
 
@@ -53,7 +53,6 @@ define (require, exports, module) ->
             @resultModel.fetch
               success: (sprintResult)=>
                 @lancamentosCollection.reset sprintResult.get "lancamentos"
-                @render()
                 @consolidaDados()
                 # @buscaLancamentosHoras sprint.get("usuarios"), sprint.get("inicio"), sprint.get("fim")
               error: (e)->
@@ -98,39 +97,49 @@ define (require, exports, module) ->
 
     buscaLancamentosHoras: (usuarios, inicio, fim)->
       @buscando = true
-      @lancamentosCollection.reset []
       helper.aguardeBtn.call @, "#btn-atualizar-tudo", "Atualizar Tudo", "Atualizando...", !@buscando
+      promLancam = []
       usuarios.forEach (id, i, arr)=>
-        $.get "/timeentries?user=#{id}&inicio=#{inicio}&fim=#{fim}", (lancamento)=>
+        promLancam.push @getLancamentos id, inicio, fim
+
+      Promise.all(promLancam).then (lancamentos)=>
+        @lancamentosCollection.reset _.without(_.flatten(lancamentos), undefined)
+        @resultModel.set "lancamentos", @lancamentosCollection.toJSON()
+        console.log "Acabou... #{@lancamentosCollection.length}"
+        @salvar()
+        @buscando = false
+        @consolidaDados()
+
+    getLancamentos: (userID, inicio, fim)->
+      new Promise (resolve, reject)=>
+        $.get "/timeentries?user=#{userID}&inicio=#{inicio}&fim=#{fim}", (lancamento)=>
           unless _.isEmpty(lancamento) or _.isEmpty(lancamento.time_entries)
-            buscandoIssue = true
-            lancamento.time_entries.forEach (time, j)=>
-              @getIssue time.issue.id, (issue)=>
-                time.issue = issue
-                console.log time
-                @lancamentosCollection.add time
-                @resultModel.set "lancamentos", @lancamentosCollection.toJSON()
-              , ()=>
-                if j >= lancamento.time_entries.length - 1 and i >= usuarios.length - 1
-                  console.log "Acabou... #{@lancamentosCollection.length}"
-                  @buscando = false
-                  @render()
-                  @consolidaDados()
+            promIssues = []
+            lancamento.time_entries.forEach (time)=>
+              promIssues.push @getIssue time.issue.id
+
+            Promise.all(promIssues).then (issues)=>
+              issues.forEach (issue, j)=>
+                console.log lancamento.time_entries[j].issue = issue
+              resolve lancamento.time_entries
           else
-            console.log "Usuário #{id} sem lançamentos..."
+            console.log "Usuário #{userID} sem lançamentos..."
+            resolve()
         .fail (e)=>
           console.log e
+          reject e
 
-    getIssue: (issueID, callback, alwaysCb)->
-      $.get "/redmine/issue?id=#{issueID}", (issue)=>
-        unless _.isEmpty(issue) or _.isEmpty(issue.issues)
-          callback issue.issues[0]
-        else
-          console.log "Chamado #{issueID} não encontrado..."
-      .fail (e)=>
-        console.log e
-      .always ()=>
-        alwaysCb?()
+    getIssue: (issueID)->
+      new Promise (resolve, reject)=>
+        $.get "/redmine/issue?id=#{issueID}", (issue)=>
+          unless _.isEmpty(issue) or _.isEmpty(issue.issues)
+            resolve issue.issues[0]
+          else
+            console.log e = "Chamado #{issueID} não encontrado..."
+            reject e
+        .fail (e)=>
+          console.log e
+          reject e
 
     processaLancamento: (lancamento)->
       time = _.pick lancamento, "user", "hours", "spent_on"
@@ -200,14 +209,14 @@ define (require, exports, module) ->
       @render()
       @renderGraficoUsuarioHoraDia()
       @renderGraficosUsuarios()
-      @renderGraficoTotais @horaOrigem unless @graficoPizza?
+      @renderGraficoTotais @horaOrigem
 
-    salvar: (ev) ->
-      ev.preventDefault()
+    salvar: (e) ->
+      e?.preventDefault()
 
       @resultModel.save null,
         success: (mdl)->
-          alert "Resultado salvo com sucesso!"
+          alert "Resultado atualizado com sucesso!"
         error: (err)->
           console.log err
           alert "Houve algum erro ao salvar o resultado./r/nConsulte o log."
