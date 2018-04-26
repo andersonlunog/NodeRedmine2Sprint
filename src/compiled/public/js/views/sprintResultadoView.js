@@ -282,15 +282,15 @@
           this.horaTipoServico = {};
           this.usuarioHoraDia = {};
           this.usuarioHoraCustoms = {};
-          this.totalChamados = {};
+          // @totalChamados = {}
           this.lancamentosCollection.forEach((lancamento) => {
             this._somaPorCustomFields(this.horaOrigem, lancamento, 53);
             this._somaPorCustomFields(this.horaGrupoCliente, lancamento, 51);
             this._somaPorCustomFields(this.horaTipoServico, lancamento, 58);
             this._somaUsuarioHoraDia(this.usuarioHoraDia, lancamento);
-            this._somaUsuarioHoraCustoms(this.usuarioHoraCustoms, lancamento);
-            return this._somaChamados(this.totalChamados, lancamento);
+            return this._somaUsuarioHoraCustoms(this.usuarioHoraCustoms, lancamento);
           });
+          // @_somaChamados @totalChamados, lancamento
           this.render();
           this.renderGraficoUsuarioHoraDia();
           this.renderGraficosUsuarios();
@@ -457,7 +457,9 @@
             var color, colorTransp, dsData;
             dsData = [];
             _.each(data.componente, (componente) => {
-              return dsData.push(componente[subKey] || 0);
+              if (componente[subKey]) {
+                return dsData.push(componente[subKey]);
+              }
             });
             color = this.getColors([subKey])[0];
             colorTransp = color.replace(")", ", 0.8)");

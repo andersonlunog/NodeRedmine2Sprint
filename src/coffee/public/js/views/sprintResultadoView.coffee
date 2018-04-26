@@ -68,6 +68,7 @@ define (require, exports, module) ->
       modelObj = @model.toJSON()
       modelObj.lancamentos = @lancamentosCollection.toJSON()
       modelObj.usuarios = @usuarioHoraCustoms or {}
+
       $(@el).html @template modelObj
 
       helper.aguardeBtn.call @, "#btn-atualizar-tudo", "Atualizar Tudo", "Atualizando...", !@buscando
@@ -229,7 +230,7 @@ define (require, exports, module) ->
       @horaTipoServico = {}
       @usuarioHoraDia = {}
       @usuarioHoraCustoms = {}
-      @totalChamados = {}
+      # @totalChamados = {}
 
       @lancamentosCollection.forEach (lancamento)=>
         @_somaPorCustomFields @horaOrigem, lancamento, 53
@@ -237,7 +238,7 @@ define (require, exports, module) ->
         @_somaPorCustomFields @horaTipoServico, lancamento, 58
         @_somaUsuarioHoraDia @usuarioHoraDia, lancamento
         @_somaUsuarioHoraCustoms @usuarioHoraCustoms, lancamento
-        @_somaChamados @totalChamados, lancamento
+        # @_somaChamados @totalChamados, lancamento
 
       @render()
       @renderGraficoUsuarioHoraDia()
@@ -355,7 +356,7 @@ define (require, exports, module) ->
       _.each subKeys, (subKey)=>
         dsData = []
         _.each data.componente, (componente) =>
-            dsData.push componente[subKey] or 0
+            dsData.push componente[subKey] if componente[subKey]
         color =  @getColors([subKey])[0]
         colorTransp = color.replace(")", ", 0.8)")
         datasets.push
