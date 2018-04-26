@@ -25,7 +25,7 @@ define (require, exports, module) ->
       @
 
     render: ->
-      @$el.html @template sprints : @collection.models
+      @$el.html @template sprints : @collection.toJSON()
 
       that = @
       $(".btn-delete").click ()->

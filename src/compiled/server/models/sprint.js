@@ -9,7 +9,10 @@
     nome: String,
     inicio: String,
     fim: String,
-    equipeID: Schema.Types.ObjectId,
+    equipeID: {
+      type: Schema.Types.ObjectId,
+      ref: 'Equipe'
+    },
     usuarios: Array,
     // redmineID: Number
     // horasPorDia: Number

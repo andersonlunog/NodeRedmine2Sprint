@@ -40,9 +40,15 @@
                 </tr>
               </thead>
               <tbody>
-                <% _.each(usuarios, function(v, k){ %>
-                <tr data-usuario="<%= k %>">
-                  <td><%= k %></td>
+                <% _.each(usuarios, function(item, nome){ %>
+                <tr data-usuario="<%= nome %>">
+                  <td>
+                    <p class="lead"><%= nome %></p>
+                    <p>Qtd chamados: <%= item.chamados.length %></p>
+                    <% _.each(item.origem.chamados, function(chamadosOrigem, servico) { %>
+                      <p title="<%= item.origem.horas[servico] %> / <%= chamadosOrigem.length %>">Hs/Chamado <%= servico %>: <%= Math.round(item.origem.horas[servico] * 100 / chamadosOrigem.length) / 100 %></p>
+                    <% }); %>
+                  </td>
                   <td><div style="width: 200px; height: 200px"><canvas class="chart-usuario-origem" width="100" height="100"></canvas></div></td>
                   <td><div style="width: 200px; height: 200px"><canvas class="chart-usuario-cliente" width="100" height="100"></canvas></div></td>
                   <td><div style="width: 200px; height: 200px"><canvas class="chart-usuario-servico" width="100" height="100"></canvas></div></td>
@@ -65,19 +71,26 @@
       <div id="collapseGraficosTotalizadores" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingGraficosTotalizadores">
         <div class="panel-body">
           <h4 id="grafico-modal-label">Hora x Origem</h4>
-          <div style="width: 400px; height: 400px"><canvas id="chart-generic-area" width="300" height="300"></canvas></div>
-            <hr>
-            <div class="btn-group" data-toggle="buttons">
-              <label class="btn btn-primary active">
-                <input type="radio" class="radio-grafico" name="tipo-grafico" id="btn-hora-origem" autocomplete="off" value="origem" checked>Hora X Origem
-              </label>
-              <label class="btn btn-primary">
-                <input type="radio" class="radio-grafico" name="tipo-grafico" id="btn-hora-grupo-cliente" autocomplete="off" value="grupo_cliente">Hora X Grupo Cliente
-              </label>
-              <label class="btn btn-primary">
-                <input type="radio" class="radio-grafico" name="tipo-grafico" id="btn-hora-tipo-servico" autocomplete="off" value="tipo_servico">Hora X Tipo Serviço
-              </label>
+          <div class="row">
+            <div class="col-md-6">
+              <canvas id="chart-generic-area" width="300" height="300"></canvas>
             </div>
+            <div class="col-md-6">
+              <canvas id="chart-radar-generic-area" width="300" height="300"></canvas>
+            </div>
+          </div>
+          <hr>
+          <div class="btn-group" data-toggle="buttons">
+            <label class="btn btn-primary active">
+              <input type="radio" class="radio-grafico" name="tipo-grafico" id="btn-hora-origem" autocomplete="off" value="origem" checked>Hora X Origem
+            </label>
+            <label class="btn btn-primary">
+              <input type="radio" class="radio-grafico" name="tipo-grafico" id="btn-hora-grupo-cliente" autocomplete="off" value="grupo_cliente">Hora X Grupo Cliente
+            </label>
+            <label class="btn btn-primary">
+              <input type="radio" class="radio-grafico" name="tipo-grafico" id="btn-hora-tipo-servico" autocomplete="off" value="tipo_servico">Hora X Tipo Serviço
+            </label>
+          </div>
         </div>
       </div>
     </div>

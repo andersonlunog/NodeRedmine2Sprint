@@ -6,19 +6,21 @@
           <th>Nome</th>
           <th>Início</th>
           <th>Fim</th>
+          <th>Equipe</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
         <% _.each(sprints, function(sprint) { %>
         <tr>
-          <td><%= sprint.attributes.nome %></td>
-          <td><%= sprint.attributes.inicio %></td>
-          <td><%= sprint.attributes.fim %></td>
+          <td><%= sprint.nome %></td>
+          <td><%= sprint.inicio %></td>
+          <td><%= sprint.fim %></td>
+          <td><%= sprint.equipeID.nome %></td>
           <td>
-            <a class="btn btn-mini btn-primary" href="#/sprint/<%= sprint.id %>">Editar</a>
-            <a class="btn btn-mini btn-danger btn-delete" data-id="<%= sprint.id %>">Del</a>
-            <a class="btn btn-mini btn-default btn-result" href="#/sprint/result/<%= sprint.id %>">Result</a>
+            <a class="btn btn-mini btn-primary" href="#/sprint/<%= sprint._id %>">Editar</a>
+            <a class="btn btn-mini btn-danger btn-delete" data-id="<%= sprint._id %>">Del</a>
+            <a class="btn btn-mini btn-default btn-result" href="#/sprint/result/<%= sprint._id %>">Result</a>
           </td>
         </tr>
         <%})%>

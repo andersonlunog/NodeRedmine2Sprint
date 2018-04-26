@@ -1,9 +1,11 @@
 (function() {
-  var SprintModel, SprintResultModel, isLoggedIn, redmine;
+  var EquipeModel, SprintModel, SprintResultModel, isLoggedIn, redmine;
 
   redmine = require('../business/redmine')();
 
   SprintModel = require('../models/sprint');
+
+  EquipeModel = require('../models/equipe');
 
   SprintResultModel = require('../models/sprintResult');
 
@@ -65,7 +67,7 @@
 
     //### SPRINT
     app.get("/sprints", function(req, res) {
-      return SprintModel.find({}, "nome inicio fim equipeID", function(err, sprints) {
+      return SprintModel.find({}).populate("equipeID", "nome").select("nome inicio fim equipeID").exec(function(err, sprints) {
         if (err) {
           return res.status(400).send(err);
         }

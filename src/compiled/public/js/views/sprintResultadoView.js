@@ -52,7 +52,6 @@
                     this.lancamentosCollection.reset(sprintResult.get("lancamentos"));
                     return this.consolidaDados();
                   },
-                  // @buscaLancamentosHoras sprint.get("usuarios"), sprint.get("inicio"), sprint.get("fim")
                   error: function(e) {
                     console.log(e);
                     return alert("Houve um erro ao buscar resultado da sprint!/r/nConsulte o log.");
@@ -190,64 +189,113 @@
           return this.lancamentosCollection.add(issue);
         }
 
+        /*
+        Cria um objeto do tipo:
+        dest:
+        horas:
+          Contrato: 2
+          Investimento: 4
+        componente:
+          wms: 
+        Contrato: 2
+        Investimento: 4
+        */
+        _somaPorCustomFields(dest, lancamento, customFieldID) {
+          var chamadosArr, componente, destChamados, destComponente, destHoras, horas, issue, key, objComp, ref, ref1, ref2, sistema;
+          issue = lancamento.get("issue");
+          horas = lancamento.get("hours");
+          key = (ref = _.findWhere(issue.custom_fields, {
+            id: customFieldID
+          })) != null ? ref.value : void 0;
+          destHoras = dest.horas || (dest.horas = {});
+          if (!destHoras[key]) {
+            destHoras[key] = horas;
+          } else {
+            destHoras[key] += horas;
+          }
+          destChamados = dest.chamados || (dest.chamados = {});
+          chamadosArr = destChamados[key] || (destChamados[key] = []);
+          if (!_.contains(chamadosArr, issue.id)) {
+            chamadosArr.push(issue.id);
+          }
+          componente = (ref1 = _.findWhere(issue.custom_fields, {
+            id: 52
+          })) != null ? ref1.value : void 0;
+          sistema = (ref2 = _.findWhere(issue.custom_fields, {
+            id: 19
+          })) != null ? ref2.value : void 0;
+          if (sistema === "Demeter") {
+            componente = "wms-demeter";
+          }
+          objComp = dest.componente || (dest.componente = {});
+          destComponente = objComp[componente] || (objComp[componente] = {});
+          if (!destComponente[key]) {
+            return destComponente[key] = horas;
+          } else {
+            return destComponente[key] += horas;
+          }
+        }
+
+        _somaUsuarioHoraDia(dest, lancamento) {
+          var match, spent_on, userName;
+          userName = lancamento.get("user").name;
+          if (dest[userName] == null) {
+            dest[userName] = {};
+          }
+          spent_on = lancamento.get("spent_on");
+          match = /(\d{4})-(\d{2})-(\d{2})/g.exec(spent_on);
+          spent_on = `${match[3]}/${match[2]}`;
+          if (dest[userName][spent_on]) {
+            return dest[userName][spent_on] += lancamento.get("hours");
+          } else {
+            return dest[userName][spent_on] = lancamento.get("hours");
+          }
+        }
+
+        _somaUsuarioHoraCustoms(dest, lancamento) {
+          var userName;
+          userName = lancamento.get("user").name;
+          if (dest[userName] == null) {
+            dest[userName] = {
+              origem: {},
+              cliente: {},
+              servico: {}
+            };
+          }
+          this._somaPorCustomFields(dest[userName].origem, lancamento, 53);
+          this._somaPorCustomFields(dest[userName].cliente, lancamento, 51);
+          this._somaPorCustomFields(dest[userName].servico, lancamento, 58);
+          return this._somaChamados(dest[userName], lancamento);
+        }
+
+        _somaChamados(dest, lancamento) {
+          var issue;
+          issue = lancamento.get("issue");
+          if (!_.contains(dest.chamados || (dest.chamados = []), issue.id)) {
+            return dest.chamados.push(issue.id);
+          }
+        }
+
         consolidaDados() {
-          var _somaPorCustomFields, _somaUsuarioHoraCustoms, _somaUsuarioHoraDia;
           this.horaOrigem = {};
           this.horaGrupoCliente = {};
           this.horaTipoServico = {};
           this.usuarioHoraDia = {};
           this.usuarioHoraCustoms = {};
-          _somaPorCustomFields = function(dest, lancamento, customFieldID) {
-            var key, ref;
-            key = (ref = _.findWhere(lancamento.get("issue").custom_fields, {
-              id: customFieldID
-            })) != null ? ref.value : void 0;
-            if (dest[key]) {
-              return dest[key] += lancamento.get("hours");
-            } else {
-              return dest[key] = lancamento.get("hours");
-            }
-          };
-          _somaUsuarioHoraDia = function(dest, lancamento) {
-            var match, spent_on, userName;
-            userName = lancamento.get("user").name;
-            if (dest[userName] == null) {
-              dest[userName] = {};
-            }
-            spent_on = lancamento.get("spent_on");
-            match = /(\d{4})-(\d{2})-(\d{2})/g.exec(spent_on);
-            spent_on = `${match[3]}/${match[2]}`;
-            if (dest[userName][spent_on]) {
-              return dest[userName][spent_on] += lancamento.get("hours");
-            } else {
-              return dest[userName][spent_on] = lancamento.get("hours");
-            }
-          };
-          _somaUsuarioHoraCustoms = function(dest, lancamento) {
-            var userName;
-            userName = lancamento.get("user").name;
-            if (dest[userName] == null) {
-              dest[userName] = {
-                origem: {},
-                cliente: {},
-                servico: {}
-              };
-            }
-            _somaPorCustomFields(dest[userName].origem, lancamento, 53);
-            _somaPorCustomFields(dest[userName].cliente, lancamento, 51);
-            return _somaPorCustomFields(dest[userName].servico, lancamento, 58);
-          };
+          this.totalChamados = {};
           this.lancamentosCollection.forEach((lancamento) => {
-            _somaPorCustomFields(this.horaOrigem, lancamento, 53);
-            _somaPorCustomFields(this.horaGrupoCliente, lancamento, 51);
-            _somaPorCustomFields(this.horaTipoServico, lancamento, 58);
-            _somaUsuarioHoraDia(this.usuarioHoraDia, lancamento);
-            return _somaUsuarioHoraCustoms(this.usuarioHoraCustoms, lancamento);
+            this._somaPorCustomFields(this.horaOrigem, lancamento, 53);
+            this._somaPorCustomFields(this.horaGrupoCliente, lancamento, 51);
+            this._somaPorCustomFields(this.horaTipoServico, lancamento, 58);
+            this._somaUsuarioHoraDia(this.usuarioHoraDia, lancamento);
+            this._somaUsuarioHoraCustoms(this.usuarioHoraCustoms, lancamento);
+            return this._somaChamados(this.totalChamados, lancamento);
           });
           this.render();
           this.renderGraficoUsuarioHoraDia();
           this.renderGraficosUsuarios();
-          return this.renderGraficoTotais(this.horaOrigem);
+          this.renderGraficoTotais(this.horaOrigem);
+          return this.renderGraficoRadarTotais(this.horaOrigem);
         }
 
         salvar(e) {
@@ -269,7 +317,7 @@
           var _renderPieChart;
           _renderPieChart = (ctx, data) => {
             var colors, labels;
-            labels = _.keys(data);
+            labels = _.keys(data.horas);
             colors = this.getColors(labels);
             return new Chart(ctx, {
               type: 'pie',
@@ -277,7 +325,7 @@
                 labels: labels,
                 datasets: [
                   {
-                    data: _.values(data),
+                    data: _.values(data.horas),
                     backgroundColor: colors,
                     borderColor: colors,
                     borderWidth: 1
@@ -358,7 +406,7 @@
           if ((ref = this.graficoPizza) != null) {
             ref.destroy();
           }
-          labels = _.keys(data);
+          labels = _.keys(data.horas);
           colors = this.getColors(labels);
           return this.graficoPizza = new Chart(ctx, {
             type: 'pie',
@@ -366,7 +414,7 @@
               labels: labels,
               datasets: [
                 {
-                  data: _.values(data),
+                  data: _.values(data.horas),
                   backgroundColor: colors,
                   borderColor: colors,
                   borderWidth: 1
@@ -380,14 +428,59 @@
           switch ($(e.target).val()) {
             case "origem":
               this.$("#grafico-modal-label").html("Hora X Origem");
-              return this.renderGraficoTotais(this.horaOrigem);
+              this.renderGraficoTotais(this.horaOrigem);
+              return this.renderGraficoRadarTotais(this.horaOrigem);
             case "tipo_servico":
               this.$("#grafico-modal-label").html("Hora X Tipo Serviço");
-              return this.renderGraficoTotais(this.horaTipoServico);
+              this.renderGraficoTotais(this.horaTipoServico);
+              return this.renderGraficoRadarTotais(this.horaTipoServico);
             case "grupo_cliente":
               this.$("#grafico-modal-label").html("Hora X Grupo Cliente");
-              return this.renderGraficoTotais(this.horaGrupoCliente);
+              this.renderGraficoTotais(this.horaGrupoCliente);
+              return this.renderGraficoRadarTotais(this.horaGrupoCliente);
           }
+        }
+
+        renderGraficoRadarTotais(data) {
+          var ctx, datasets, labels, ref, subKeys;
+          ctx = this.$("#chart-radar-generic-area");
+          if ((ref = this.graficoRadar) != null) {
+            ref.destroy();
+          }
+          labels = _.keys(data.componente);
+          datasets = [];
+          subKeys = [];
+          _.each(data.componente, function(componente, key) {
+            return subKeys = _.union(subKeys, _.keys(componente));
+          });
+          _.each(subKeys, (subKey) => {
+            var color, colorTransp, dsData;
+            dsData = [];
+            _.each(data.componente, (componente) => {
+              return dsData.push(componente[subKey] || 0);
+            });
+            color = this.getColors([subKey])[0];
+            colorTransp = color.replace(")", ", 0.8)");
+            return datasets.push({
+              label: subKey,
+              data: dsData,
+              fill: false,
+              pointRadius: 4,
+              backgroundColor: colorTransp,
+              borderColor: colorTransp,
+              pointBackgroundColor: color,
+              pointBorderColor: "#fff",
+              pointHoverBackgroundColor: "#fff",
+              pointHoverBorderColor: color
+            });
+          });
+          return this.graficoRadar = new Chart(ctx, {
+            type: 'radar',
+            data: {
+              labels: labels,
+              datasets: datasets
+            }
+          });
         }
 
       };
@@ -397,7 +490,6 @@
       SprintResultadoView.prototype.template = _.template(template);
 
       SprintResultadoView.prototype.events = {
-        // "click #btn-salvar": "salvar"
         "click #btn-atualizar-tudo": "atualizarTudo",
         "change .radio-grafico": "alterarGrafico"
       };

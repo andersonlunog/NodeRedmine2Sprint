@@ -1,5 +1,6 @@
 redmine = require('../business/redmine')()
 SprintModel = require('../models/sprint')
+EquipeModel = require('../models/equipe')
 SprintResultModel = require('../models/sprintResult')
 
 isLoggedIn = (req, res, next) ->
@@ -54,9 +55,12 @@ module.exports = (app) ->
   #### SPRINT
 
   app.get "/sprints", (req, res) ->
-    SprintModel.find {}, "nome inicio fim equipeID", (err, sprints) ->
-      return res.status(400).send(err) if err
-      res.send sprints
+    SprintModel.find({})
+      .populate("equipeID", "nome")
+      .select("nome inicio fim equipeID")
+      .exec (err, sprints) ->
+        return res.status(400).send(err) if err
+        res.send sprints
 
   app.get "/sprint/:id", (req, res) ->
     SprintModel.findById req.params.id, (err, sprint) ->

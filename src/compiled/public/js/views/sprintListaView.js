@@ -27,7 +27,7 @@
         render() {
           var that;
           this.$el.html(this.template({
-            sprints: this.collection.models
+            sprints: this.collection.toJSON()
           }));
           that = this;
           $(".btn-delete").click(function() {

@@ -17,7 +17,6 @@ define (require, exports, module) ->
     template: _.template template
 
     events:
-      # "click #btn-salvar": "salvar"
       "click #btn-atualizar-tudo": "atualizarTudo"
       "change .radio-grafico": "alterarGrafico"
 
@@ -54,7 +53,6 @@ define (require, exports, module) ->
               success: (sprintResult)=>
                 @lancamentosCollection.reset sprintResult.get "lancamentos"
                 @consolidaDados()
-                # @buscaLancamentosHoras sprint.get("usuarios"), sprint.get("inicio"), sprint.get("fim")
               error: (e)->
                 console.log e
                 alert "Houve um erro ao buscar resultado da sprint!/r/nConsulte o log."
@@ -161,55 +159,91 @@ define (require, exports, module) ->
 
       @lancamentosCollection.add issue
 
+
+    ###
+    Cria um objeto do tipo:
+    dest:
+      horas:
+        Contrato: 2
+        Investimento: 4
+      componente:
+        wms: 
+          Contrato: 2
+          Investimento: 4
+    ###
+    _somaPorCustomFields: (dest, lancamento, customFieldID)->
+      issue = lancamento.get("issue")
+      horas = lancamento.get("hours")
+      key = _.findWhere(issue.custom_fields, {id: customFieldID})?.value
+      destHoras = dest.horas or dest.horas = {}
+      unless destHoras[key]
+        destHoras[key] = horas
+      else
+         destHoras[key] += horas
+
+      destChamados = dest.chamados or dest.chamados = {}
+      chamadosArr = destChamados[key] or destChamados[key] = []
+      chamadosArr.push(issue.id) unless _.contains chamadosArr, issue.id
+
+      componente = _.findWhere(issue.custom_fields, {id: 52})?.value
+      sistema = _.findWhere(issue.custom_fields, {id: 19})?.value
+      componente = "wms-demeter" if sistema is "Demeter"
+      objComp = dest.componente or dest.componente = {}
+      destComponente = objComp[componente] or objComp[componente] = {}
+      unless destComponente[key]
+        destComponente[key] = horas
+      else
+         destComponente[key] += horas
+
+    _somaUsuarioHoraDia: (dest, lancamento)->
+      userName = lancamento.get("user").name
+      dest[userName] = {} unless dest[userName]?
+
+      spent_on = lancamento.get "spent_on"
+      match = (/(\d{4})-(\d{2})-(\d{2})/g).exec(spent_on)
+      spent_on = "#{match[3]}/#{match[2]}"
+      if dest[userName][spent_on]
+        dest[userName][spent_on] += lancamento.get("hours")
+      else
+        dest[userName][spent_on] = lancamento.get("hours")
+
+    _somaUsuarioHoraCustoms: (dest, lancamento)->
+      userName = lancamento.get("user").name
+      unless dest[userName]?
+        dest[userName] =
+          origem: {}
+          cliente: {}
+          servico: {}
+      @_somaPorCustomFields dest[userName].origem, lancamento, 53
+      @_somaPorCustomFields dest[userName].cliente, lancamento, 51
+      @_somaPorCustomFields dest[userName].servico, lancamento, 58
+      @_somaChamados dest[userName], lancamento
+
+    _somaChamados: (dest, lancamento)->
+      issue = lancamento.get("issue")
+      dest.chamados.push(issue.id) unless _.contains (dest.chamados or dest.chamados = []), issue.id
+
     consolidaDados: ()->
       @horaOrigem = {}
       @horaGrupoCliente = {}
       @horaTipoServico = {}
       @usuarioHoraDia = {}
-      @usuarioHoraCustoms = {}      
-
-      _somaPorCustomFields = (dest, lancamento, customFieldID)->
-        key = _.findWhere(lancamento.get("issue").custom_fields, {id: customFieldID})?.value
-        if dest[key]
-          dest[key] += lancamento.get("hours")
-        else
-          dest[key] = lancamento.get("hours")
-
-      _somaUsuarioHoraDia = (dest, lancamento)->
-        userName = lancamento.get("user").name
-        dest[userName] = {} unless dest[userName]?
-
-        spent_on = lancamento.get "spent_on"
-        match = (/(\d{4})-(\d{2})-(\d{2})/g).exec(spent_on)
-        spent_on = "#{match[3]}/#{match[2]}"
-        if dest[userName][spent_on]
-          dest[userName][spent_on] += lancamento.get("hours")
-        else
-          dest[userName][spent_on] = lancamento.get("hours")
-
-      _somaUsuarioHoraCustoms = (dest, lancamento)->
-        userName = lancamento.get("user").name
-        unless dest[userName]?
-          dest[userName] = 
-            origem: {}
-            cliente: {}
-            servico: {}
-
-        _somaPorCustomFields dest[userName].origem, lancamento, 53
-        _somaPorCustomFields dest[userName].cliente, lancamento, 51
-        _somaPorCustomFields dest[userName].servico, lancamento, 58
+      @usuarioHoraCustoms = {}
+      @totalChamados = {}
 
       @lancamentosCollection.forEach (lancamento)=>
-        _somaPorCustomFields @horaOrigem, lancamento, 53
-        _somaPorCustomFields @horaGrupoCliente, lancamento, 51
-        _somaPorCustomFields @horaTipoServico, lancamento, 58
-        _somaUsuarioHoraDia @usuarioHoraDia, lancamento
-        _somaUsuarioHoraCustoms @usuarioHoraCustoms, lancamento
+        @_somaPorCustomFields @horaOrigem, lancamento, 53
+        @_somaPorCustomFields @horaGrupoCliente, lancamento, 51
+        @_somaPorCustomFields @horaTipoServico, lancamento, 58
+        @_somaUsuarioHoraDia @usuarioHoraDia, lancamento
+        @_somaUsuarioHoraCustoms @usuarioHoraCustoms, lancamento
+        @_somaChamados @totalChamados, lancamento
 
       @render()
       @renderGraficoUsuarioHoraDia()
       @renderGraficosUsuarios()
       @renderGraficoTotais @horaOrigem
+      @renderGraficoRadarTotais @horaOrigem
 
     salvar: (e) ->
       e?.preventDefault()
@@ -223,14 +257,14 @@ define (require, exports, module) ->
 
     renderGraficosUsuarios: ()->
       _renderPieChart = (ctx, data)=>
-        labels = _.keys(data)
+        labels = _.keys(data.horas)
         colors =  @getColors(labels)
         new Chart ctx,
           type: 'pie'
           data:
             labels: labels
             datasets: [
-              data: _.values(data)
+              data: _.values(data.horas)
               backgroundColor: colors
               borderColor: colors
               borderWidth: 1
@@ -281,14 +315,14 @@ define (require, exports, module) ->
     renderGraficoTotais: (data)->
       ctx = @$ "#chart-generic-area"
       @graficoPizza?.destroy()
-      labels = _.keys(data)
+      labels = _.keys(data.horas)
       colors =  @getColors(labels)
       @graficoPizza = new Chart ctx,
         type: 'pie'
         data: 
           labels: labels
           datasets: [
-            data: _.values(data)
+            data: _.values(data.horas)
             backgroundColor: colors
             borderColor: colors
             borderWidth: 1
@@ -299,11 +333,47 @@ define (require, exports, module) ->
         when "origem"
           @$("#grafico-modal-label").html "Hora X Origem"
           @renderGraficoTotais @horaOrigem
+          @renderGraficoRadarTotais @horaOrigem
         when "tipo_servico"
           @$("#grafico-modal-label").html "Hora X Tipo Serviço"
           @renderGraficoTotais @horaTipoServico
+          @renderGraficoRadarTotais @horaTipoServico
         when "grupo_cliente"
           @$("#grafico-modal-label").html "Hora X Grupo Cliente"
           @renderGraficoTotais @horaGrupoCliente
+          @renderGraficoRadarTotais @horaGrupoCliente
+
+    renderGraficoRadarTotais: (data)->
+      ctx = @$ "#chart-radar-generic-area"
+      @graficoRadar?.destroy()
+      labels = _.keys(data.componente)
+      datasets = []
+      subKeys = []
+      _.each data.componente, (componente, key)->
+        subKeys = _.union subKeys, _.keys(componente)
+
+      _.each subKeys, (subKey)=>
+        dsData = []
+        _.each data.componente, (componente) =>
+            dsData.push componente[subKey] or 0
+        color =  @getColors([subKey])[0]
+        colorTransp = color.replace(")", ", 0.8)")
+        datasets.push
+          label: subKey
+          data: dsData
+          fill: false
+          pointRadius: 4
+          backgroundColor: colorTransp
+          borderColor: colorTransp
+          pointBackgroundColor: color
+          pointBorderColor: "#fff"
+          pointHoverBackgroundColor: "#fff"
+          pointHoverBorderColor: color
+
+      @graficoRadar = new Chart ctx,
+        type: 'radar'
+        data: 
+          labels: labels
+          datasets: datasets
 
   module.exports = SprintResultadoView
