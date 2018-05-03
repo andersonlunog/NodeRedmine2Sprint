@@ -75,7 +75,8 @@
           modelObj = this.model.toJSON();
           modelObj.lancamentos = this.lancamentosCollection.toJSON();
           modelObj.usuarios = this.usuarioHoraCustoms || {};
-          $(this.el).html(this.template(modelObj));
+          modelObj.horaOrigemTotal = this.horaOrigem || {};
+          this.$el.html(this.template(modelObj));
           helper.aguardeBtn.call(this, "#btn-atualizar-tudo", "Atualizar Tudo", "Atualizando...", !this.buscando);
           return this;
         }
@@ -244,7 +245,7 @@
           }
           spent_on = lancamento.get("spent_on");
           match = /(\d{4})-(\d{2})-(\d{2})/g.exec(spent_on);
-          spent_on = `${match[3]}/${match[2]}`;
+          spent_on = `${match[3]}-${match[2]}`;
           if (dest[userName][spent_on]) {
             return dest[userName][spent_on] += lancamento.get("hours");
           } else {
@@ -408,7 +409,7 @@
           }
           labels = _.keys(data.horas);
           colors = this.getColors(labels);
-          return this.graficoPizza = new Chart(ctx, {
+          this.graficoPizza = new Chart(ctx, {
             type: 'pie',
             data: {
               labels: labels,
@@ -422,6 +423,11 @@
               ]
             }
           });
+          if (!_.isEmpty(data)) {
+            return this.$("#total-horas-chamado").html(this.templateTotais({
+              horaTipoTotal: data
+            }));
+          }
         }
 
         alterarGrafico(e) {
@@ -495,6 +501,8 @@
         "click #btn-atualizar-tudo": "atualizarTudo",
         "change .radio-grafico": "alterarGrafico"
       };
+
+      SprintResultadoView.prototype.templateTotais = _.template("<p>Qtd chamados: <%= _.reduce(_.values(horaTipoTotal.chamados), function(mem, chamados){ return mem + chamados.length }, 0) %></p>\n<% _.each(horaTipoTotal.chamados, function(chamadosOrigem, servico) { %>\n  <p title=\"<%= horaTipoTotal.horas[servico] %> / <%= chamadosOrigem.length %>\">Hs/Chamado <%= servico %>: <%= Math.round(horaTipoTotal.horas[servico] * 100 / chamadosOrigem.length) / 100 %></p>\n<% }); %>");
 
       return SprintResultadoView;
 

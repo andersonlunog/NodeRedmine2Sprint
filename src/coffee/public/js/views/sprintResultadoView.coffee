@@ -20,6 +20,13 @@ define (require, exports, module) ->
       "click #btn-atualizar-tudo": "atualizarTudo"
       "change .radio-grafico": "alterarGrafico"
 
+    templateTotais: _.template """
+    <p>Qtd chamados: <%= _.reduce(_.values(horaTipoTotal.chamados), function(mem, chamados){ return mem + chamados.length }, 0) %></p>
+    <% _.each(horaTipoTotal.chamados, function(chamadosOrigem, servico) { %>
+      <p title="<%= horaTipoTotal.horas[servico] %> / <%= chamadosOrigem.length %>">Hs/Chamado <%= servico %>: <%= Math.round(horaTipoTotal.horas[servico] * 100 / chamadosOrigem.length) / 100 %></p>
+    <% }); %>
+    """
+
     initialize: (@options)->
       @chartColors =
         blue: "rgb(54, 162, 235)"
@@ -68,8 +75,9 @@ define (require, exports, module) ->
       modelObj = @model.toJSON()
       modelObj.lancamentos = @lancamentosCollection.toJSON()
       modelObj.usuarios = @usuarioHoraCustoms or {}
+      modelObj.horaOrigemTotal = @horaOrigem or {}      
 
-      $(@el).html @template modelObj
+      @$el.html @template modelObj
 
       helper.aguardeBtn.call @, "#btn-atualizar-tudo", "Atualizar Tudo", "Atualizando...", !@buscando
       @
@@ -202,7 +210,7 @@ define (require, exports, module) ->
 
       spent_on = lancamento.get "spent_on"
       match = (/(\d{4})-(\d{2})-(\d{2})/g).exec(spent_on)
-      spent_on = "#{match[3]}/#{match[2]}"
+      spent_on = "#{match[3]}-#{match[2]}"
       if dest[userName][spent_on]
         dest[userName][spent_on] += lancamento.get("hours")
       else
@@ -311,7 +319,7 @@ define (require, exports, module) ->
           responsive: false
 
       @graficoUsuario?.destroy()
-      @graficoUsuario = new Chart ctx, opts       
+      @graficoUsuario = new Chart ctx, opts
 
     renderGraficoTotais: (data)->
       ctx = @$ "#chart-generic-area"
@@ -328,6 +336,8 @@ define (require, exports, module) ->
             borderColor: colors
             borderWidth: 1
           ]
+
+      @$("#total-horas-chamado").html @templateTotais horaTipoTotal: data unless _.isEmpty data
 
     alterarGrafico: (e)->
       switch $(e.target).val()
