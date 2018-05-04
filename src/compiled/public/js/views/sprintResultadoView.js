@@ -1,13 +1,12 @@
 (function() {
   define(function(require, exports, module) {
-    var $, Backbone, Chart, SprintResultadoView, UsuarioRedmineCollection, _, helper, sprintModel, sprintResultModel, template;
+    var $, Backbone, Chart, SprintResultadoView, _, helper, sprintModel, sprintResultModel, template;
     _ = require("underscore");
     $ = require("jquery");
     Backbone = require("backbone");
     template = require("text!templates/sprintResultado.html");
     sprintModel = require("models/sprintModel");
     sprintResultModel = require("models/sprintResultModel");
-    UsuarioRedmineCollection = require("models/usuarioRedmineCollection");
     Chart = require("chart");
     helper = require("helpers/helper");
     require("bootstrap");
@@ -34,7 +33,6 @@
           this.model = new sprintModel;
           this.resultModel = new sprintResultModel;
           this.model.on("change", this.render, this);
-          this.usuarioRedmineCollection = new UsuarioRedmineCollection;
           this.lancamentosCollection = new Backbone.Collection;
           this.lancamentosCollection.on("add remove", this.render, this);
           this.render();
@@ -118,7 +116,7 @@
           return Promise.all(promLancam).then((lancamentos) => {
             this.lancamentosCollection.reset(_.without(_.flatten(lancamentos), void 0));
             this.resultModel.set("lancamentos", this.lancamentosCollection.toJSON());
-            console.log(`Acabou... ${this.lancamentosCollection.length}`);
+            console.log(`Buscou ${this.lancamentosCollection.length} lançamentos!`);
             this.salvar();
             this.buscando = false;
             return this.consolidaDados();
@@ -245,7 +243,7 @@
           }
           spent_on = lancamento.get("spent_on");
           match = /(\d{4})-(\d{2})-(\d{2})/g.exec(spent_on);
-          spent_on = `${match[3]}-${match[2]}`;
+          spent_on = `${match[2]}-${match[3]}`;
           if (dest[userName][spent_on]) {
             return dest[userName][spent_on] += lancamento.get("hours");
           } else {

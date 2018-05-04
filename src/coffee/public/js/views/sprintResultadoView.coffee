@@ -6,7 +6,6 @@ define (require, exports, module) ->
   template = require "text!templates/sprintResultado.html"
   sprintModel = require "models/sprintModel"
   sprintResultModel = require "models/sprintResultModel"
-  UsuarioRedmineCollection = require "models/usuarioRedmineCollection"
   Chart = require "chart"
   helper = require "helpers/helper"
   require "bootstrap"
@@ -47,7 +46,6 @@ define (require, exports, module) ->
       @model = new sprintModel
       @resultModel = new sprintResultModel
       @model.on "change", @render, @
-      @usuarioRedmineCollection = new UsuarioRedmineCollection
       @lancamentosCollection = new Backbone.Collection
       @lancamentosCollection.on "add remove", @render, @
       @render()
@@ -112,7 +110,7 @@ define (require, exports, module) ->
       Promise.all(promLancam).then (lancamentos)=>
         @lancamentosCollection.reset _.without(_.flatten(lancamentos), undefined)
         @resultModel.set "lancamentos", @lancamentosCollection.toJSON()
-        console.log "Acabou... #{@lancamentosCollection.length}"
+        console.log "Buscou #{@lancamentosCollection.length} lançamentos!"
         @salvar()
         @buscando = false
         @consolidaDados()
@@ -210,7 +208,7 @@ define (require, exports, module) ->
 
       spent_on = lancamento.get "spent_on"
       match = (/(\d{4})-(\d{2})-(\d{2})/g).exec(spent_on)
-      spent_on = "#{match[3]}-#{match[2]}"
+      spent_on = "#{match[2]}-#{match[3]}"
       if dest[userName][spent_on]
         dest[userName][spent_on] += lancamento.get("hours")
       else
